@@ -1,7 +1,7 @@
 function Bsignranktest(y,x,rope)
 include("Tests/heaviside.jl")
 
-nsamples=1500000
+nsamples=150000
 
 #Dirichlet process prior strength
 s=0.5
