@@ -3,6 +3,9 @@
 
   data {
     
+    real deltaLow;
+    real deltaHi;
+    
     //bounds of the sigma of the higher-level distribution
     real std0Low; 
     real std0Hi; 
