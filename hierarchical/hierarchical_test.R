@@ -75,7 +75,6 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   #   filename<-'meanMLE'
   #   csv_filename <- paste (filename,"csv",sep=".")
   #   write.matrix(meanMatrix, file = csv_filename, sep = ",")
-  #   # sigma has been estimated and saved
   
   
   

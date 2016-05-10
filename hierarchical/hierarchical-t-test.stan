@@ -1,4 +1,4 @@
-/*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets 
+/*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets.
 */
 
   data {
