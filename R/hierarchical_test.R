@@ -109,7 +109,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   if (varianceModel=="posterior"){
     #this calls the Student with learnable dofs 
     if (samplingType=="student") {
-      stanfit <-  stan(file = 'hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=10)
+      stanfit <-  stan(file = 'hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=4)
     }
     
     #this calls the Gaussian
@@ -216,8 +216,8 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
     }
     
     #debug: generating samples for Alessio
-    cumulativeData <- data.frame(cbind(cumulativeLeft,cumulativeRope,cumulativeRight))
-    write.matrix(cumulativeData,file='cumulativeData.csv', sep = " ,")
+#     cumulativeData <- data.frame(cbind(cumulativeLeft,cumulativeRope,cumulativeRight))
+#     write.matrix(cumulativeData,file='cumulativeData.csv', sep = " ,")
     
   }
   if (samplingType=="normal") {

@@ -1,15 +1,8 @@
-/*this version implements a uniform prior over the parameters a,b of the gamma distribution 
-from which we draw nu. It supersedes the kruschke and steel prior over nu.
-It does not yert estimate the correlation.
-Current version
+/*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets 
 */
 
   data {
     
-    //bounds on delta (+1 and -1, rescaled)
-    real deltaLow;
-    real deltaHi;
-
     //bounds of the sigma of the higher-level distribution
     real std0Low; 
     real std0Hi; 
@@ -18,6 +11,7 @@ Current version
     real stdLow; 
     real stdHi; 
     
+        
     //number of results for each data set. Typically 100 (10 runs of 10-folds cv)
     int<lower=2> Nsamples; 
 
