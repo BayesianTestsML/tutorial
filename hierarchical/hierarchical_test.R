@@ -3,7 +3,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
   #for sampling from non-standardized topt
-  library("metRology", lib.loc="/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+  library(metRology)
   
   #------------------------------------------------------------------------------- 
   
