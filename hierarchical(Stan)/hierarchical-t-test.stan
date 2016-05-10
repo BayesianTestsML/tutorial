@@ -1,1 +1,0 @@
-../../hierarchical/R/hierarchical/hierarchical-t-test.stan
