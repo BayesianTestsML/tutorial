@@ -1,6 +1,5 @@
   multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,simulation_ID, delta_acc_sampling='cauchy') {
   
-  
   library(MASS)
   library(matrixStats)
   library(rstan)

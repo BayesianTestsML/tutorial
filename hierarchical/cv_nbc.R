@@ -15,7 +15,7 @@ cv_competing_nbc <- function(nruns,nfolds,n,theta_diff,theta_star) {
   #     -nbc1 accuracy
   #     -nbc2 accuracy
   #     -delta = nbc1 accuracy - nbc2 accuracy
-  #     -var= variance  (nbc1 accuracy - nbc2 accuracy)
+  #     -var=variance  (nbc1 accuracy - nbc2 accuracy)
   
   
   c_val <- function(nfolds) {
