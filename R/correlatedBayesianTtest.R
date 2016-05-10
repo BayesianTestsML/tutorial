@@ -1,4 +1,3 @@
-#README
 #diff_a_b is a vector of differences between the two classifiers, on each fold of cross-validation.
 #If you have done 10 runs of 10-folds cross-validation, you have 100 results for each classifier.
 #You should have run cross-validation on the same folds for the two classifiers.
