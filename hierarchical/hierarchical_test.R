@@ -214,9 +214,6 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
       }
     }
     
-    #debug: generating samples for Alessio
-#     cumulativeData <- data.frame(cbind(cumulativeLeft,cumulativeRope,cumulativeRight))
-#     write.matrix(cumulativeData,file='cumulativeData.csv', sep = " ,")
     
   }
   if (samplingType=="normal") {
@@ -231,11 +228,6 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   probRopeNextDelta  <- sampledRopeWins/(sampledRigthWins+sampledLeftWins+sampledRopeWins)
   probPositiveNextDelta  <- sampledPositiveWins/(sampledPositiveWins+sampledNegativeWins)
   probNegativeNextDelta  <- sampledNegativeWins /(sampledPositiveWins+sampledNegativeWins)
-  #   probRightNextDelta <-mean(sampledDelta>rope_max)
-  #   probLeftNextDelta  <-mean(sampledDelta<rope_min)
-  #   probRopeNextDelta  <-mean(sampledDelta>rope_min & sampledDelta<rope_max)
-  #   probPositiveNextDelta  <-mean(sampledDelta>0)
-  #   probNegativeNextDelta  <-mean(sampledDelta<0)
   
   
   results = list ("delta0"=list("right"=prob_right_delta0, "left"=prob_left_delta0, "rope"=prob_rope_delta0, "positive"=prob_positive_delta0,"negative"=prob_negative_delta0),

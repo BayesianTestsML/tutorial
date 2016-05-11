@@ -56,11 +56,6 @@
   prob_right_hier_delta0 <- matrix(0,reps);
   rmse_indep_bay_ttest <- matrix(0,reps);
   rmse_hier_bay_ttest <- matrix(0,reps);
-  logLossIndep <- matrix(0,reps);
-  logLossHier <- matrix(0,reps);
-  pActualIndep <- matrix(0,reps);
-  pActualHier <- matrix(0,reps);
-  mae_hier_delta0 <- matrix(0,reps);
   rhoEstimated <- matrix(0,reps);
   stan_elapsed_time <- matrix(0,reps);
   mean.diff<- matrix(0,reps);
@@ -161,40 +156,29 @@
       prob_rope_hier_delta0[k]  <- stan_prob$delta0$rope
       prob_right_hier_delta0[k] <- stan_prob$delta0$right
       
-      #mae on the delta0. Actual delta0 is halfway delta_min between delta_max
-      #the mae on delta0 is computed on the probability. It could be computed
-      #on the delta0 vs estimated delta0, for consistency with what we do on dsets.
-#       actualdelta0 <- mean(c(delta_min,delta_max))
-#       if ( actualdelta0 < rope_min ) {
-#         mae_hier_delta0[k] <- 1-prob_left_hier_delta0[k]
-#       } else if ( actualdelta0 > rope_max ) {
-#         mae_hier_delta0[k] <- 1-prob_right_hier_delta0[k]
-#       } else {
-#         mae_hier_delta0[k] <- 1-prob_rope_hier_delta0[k]
+#logLoss, pActual, etc commented out: it refers to the inference on Delta0      
+#       for (aa in 1:current_many_dsets){
+#         if (delta_acc_each_dset[aa]<rope_min) {
+#           logLossIndep[k] <- logLossIndep[k] - log(indep_p_left_each_dset[aa])
+#           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$left[aa])
+#           pActualHier[k] <-pActualHier[k] + stan_prob$delta$left[aa]
+#           pActualIndep[k] <-pActualIndep[k] + indep_p_left_each_dset[aa]
+#         } else if (delta_acc_each_dset[aa]>rope_max) {
+#           logLossIndep[k] <- logLossIndep[k] - log(indep_p_right_each_dset[aa])
+#           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$right[aa])
+#           pActualHier[k] <-pActualHier[k] + stan_prob$delta$right[aa]
+#           pActualIndep[k] <-pActualIndep[k] + indep_p_right_each_dset[aa]
+#         } else {
+#           logLossIndep[k] <- logLossIndep[k] - log(indep_p_rope_each_dset[aa])
+#           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$rope[aa])
+#           pActualHier[k] <-pActualHier[k] + stan_prob$delta$rope[aa] 
+#           pActualIndep[k] <-pActualIndep[k] + indep_p_rope_each_dset[aa]
+#         }
 #       }
-      
-      for (aa in 1:current_many_dsets){
-        if (delta_acc_each_dset[aa]<rope_min) {
-          logLossIndep[k] <- logLossIndep[k] - log(indep_p_left_each_dset[aa])
-          logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$left[aa])
-          pActualHier[k] <-pActualHier[k] + stan_prob$delta$left[aa]
-          pActualIndep[k] <-pActualIndep[k] + indep_p_left_each_dset[aa]
-        } else if (delta_acc_each_dset[aa]>rope_max) {
-          logLossIndep[k] <- logLossIndep[k] - log(indep_p_right_each_dset[aa])
-          logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$right[aa])
-          pActualHier[k] <-pActualHier[k] + stan_prob$delta$right[aa]
-          pActualIndep[k] <-pActualIndep[k] + indep_p_right_each_dset[aa]
-        } else {
-          logLossIndep[k] <- logLossIndep[k] - log(indep_p_rope_each_dset[aa])
-          logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$rope[aa])
-          pActualHier[k] <-pActualHier[k] + stan_prob$delta$rope[aa] 
-          pActualIndep[k] <-pActualIndep[k] + indep_p_rope_each_dset[aa]
-        }
-      }
-      logLossIndep[k] <- logLossIndep[k]/current_many_dsets
-      logLossHier[k] <- logLossHier[k]/current_many_dsets
-      pActualIndep[k] <-pActualIndep[k]/current_many_dsets
-      pActualHier[k] <-pActualHier[k]/current_many_dsets
+#       logLossIndep[k] <- logLossIndep[k]/current_many_dsets
+#       logLossHier[k] <- logLossHier[k]/current_many_dsets
+#       pActualIndep[k] <-pActualIndep[k]/current_many_dsets
+#       pActualHier[k] <-pActualHier[k]/current_many_dsets
       
       #means a posteriori equals the maxLik mean
       maxLikMeans <- colMeans(Diff_ab)
@@ -219,23 +203,18 @@
                          'prob_right_hier_delta0'=prob_right_hier_delta0,
                          'rmse_hier_each_dset'=rmse_hier_bay_ttest,
                          'rmse_indep_each_dset'=rmse_indep_bay_ttest,
-                         'mae_hier_delta0'=mae_hier_delta0,
-                         'logLossHier'=logLossHier,
-                         'logLossIndep'=logLossIndep,
-                         'pActualHier'=pActualHier,
-                         'pActualIndep'=pActualIndep,
-                         'stan_elapsed_time'=stan_elapsed_time,
-                         'rhos'=mean(rhoEstimated)
-    )
-  }
+                         'stan_elapsed_time'=stan_elapsed_time)  
+    }
   
   save_results <- function(results,filename) {
     
     mystring <- paste('delta_acc_sampling,delta0,std0,num_experiments,',
-                      'how_many_dsets,sample_size,signRankPower,signRankPValuehier_left_95,hier_rope_95,hier_right95,',
+                      'how_many_dsets,sample_size,signRankPower,signRankPValue,hier_left_95,hier_rope_95,hier_right95,',
                       'hier_left_90,hier_rope_90,hier_right90,median_hier_p_left,median_hier_p_rope,',
-                      'median_hier_p_right,rmse_hier,rmse_mle,maedelta0,logLossHier,logLossIndep,pActualHier,pActualIndep,Nfolds,StanElapsedTime',sep="");
-    write(mystring, filename, append = FALSE)
+                      'median_hier_p_right,rmse_hier,rmse_mle,StanElapsedTime',sep="");
+
+                      #THESE FIELDS ARE NO LONGER TRACKED: logLossHier,logLossIndep,pActualHier,pActualIndep
+                  write(mystring, filename, append = FALSE)
     
     for (ii in 1:length(results)){
       num_experiments <- length(results[[ii]]$sign_rank_p_value);
@@ -251,9 +230,7 @@
       tmp_vector <- c(h1_sign_rank, h1_sign_rankPvalue, hier_left_95,hier_rope_95, hier_right_95,hier_left_90,hier_rope_90,hier_right_90,
                       median(results[[ii]]$prob_left_hier_delta0),median(results[[ii]]$prob_rope_hier_delta0),median(results[[ii]]$prob_right_hier_delta0),
                       mean(results[[ii]]$rmse_hier_each_dset),mean(results[[ii]]$rmse_indep_each_dset),
-                      mean(results[[ii]]$mae_hier_delta0), mean(results[[ii]]$logLossHier), mean(results[[ii]]$logLossIndep),
-                      mean(results[[ii]]$pActualHier), mean(results[[ii]]$pActualIndep),
-                      n_folds, mean(results[[ii]]$stan_elapsed_time));
+                      mean(results[[ii]]$stan_elapsed_time));
       mystring <- paste(delta_acc_sampling,',',results[[ii]]$delta0,',',
                         results[[ii]]$std0,',',num_experiments,',',results[[ii]]$how_many_dsets,
                         ',',results[[ii]]$sample_size,',',paste(tmp_vector,collapse=","));
