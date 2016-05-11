@@ -36,7 +36,7 @@
     reps <- 1 
   }
   
-  file_str0 <- paste('resultsDelta0',delta0,'Std0',std0,'_','sample_sizes',sample_sizes,'_',delta_acc_sampling,'_simulID_',simulation_ID,sep = "")
+  file_str0 <- paste('resultsDelta0',delta0,'Std0',std0,'_','sample_sizes',sample_sizes,'_',delta_acc_sampling,'_simulID_',simulation_ID,".dat",sep = "")
   filename <- paste(file_str0,'.csv',sep = "")
   log_filename <- paste('log_',file_str0,'.csv',sep = "")
   

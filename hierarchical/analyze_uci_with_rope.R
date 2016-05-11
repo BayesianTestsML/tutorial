@@ -21,6 +21,8 @@ analyze_uci_with_rope <- function() {
   }
   
   load("uci_data.RData")
+  #to have maximum reliability when comparing real classifiers
+  chains = 8 
   
   #output parameters 
   
@@ -127,9 +129,9 @@ analyze_uci_with_rope <- function() {
       #run the hierarchical test
       #we do not provide a simulation ID as this is run locally
       startTime<-Sys.time()
-      simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),samplingType,sep = "-")
+      simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),samplingType,".dat",sep = "-")
       
-      hierarchicalResults[[counter]] <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,std_upper_bound,samplingType)
+      hierarchicalResults[[counter]] <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,std_upper_bound,samplingType,chains)
       
       stopTime<-Sys.time()
       show(startTime-stopTime)
@@ -167,7 +169,9 @@ analyze_uci_with_rope <- function() {
     prob_ropeNextDelta=prob_ropeNextDelta,
     prob_classBNextDelta=prob_classBNextDelta,
     prob_positiveNextDelta=prob_positiveNextDelta,
-    prob_negativeNextDelta=prob_negativeNextDelta
+    prob_negativeNextDelta=prob_negativeNextDelta,
+    rope_min=rope_min,
+    rope_max=rope_max
   )
   
   csv_filename <- paste (filename,"csv",sep=".")

@@ -1,4 +1,4 @@
-hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType) {
+hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType,chains=4) {
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
@@ -108,12 +108,12 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   if (varianceModel=="posterior"){
     #this calls the Student with learnable dofs 
     if (samplingType=="student") {
-      stanfit <-  stan(file = 'hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=4)
+      stanfit <-  stan(file = 'hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=chains)
     }
     
     #this calls the Gaussian
     else if (samplingType=="normal") {
-      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains=4)
+      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains)
     }
     #estimate of the posterior variance for comparison purposes
     #     posteriorSigma<-vector(length = q)
