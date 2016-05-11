@@ -40,8 +40,8 @@
   filename <- paste(file_str0,'.csv',sep = "")
   log_filename <- paste('log_',file_str0,'.csv',sep = "")
   
-  rope_min <- -0.005;
-  rope_max <- 0.005;
+  rope_min <- -0.01;
+  rope_max <- 0.01;
   #set the seed for reproducible results
   set.seed(simulation_ID)
   

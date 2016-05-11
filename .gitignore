@@ -1,32 +1,28 @@
 /GC
 
-hierarchical/BayesianSignedRank.R
-
-hierarchical/analyze_uci_with_rope.R
-
-hierarchical/BayesianSignTest.R
-
 *.csv
 
-hierarchical/find-pars.R
-
-hierarchical/getMargLik.R
-
 *.Rdata
-
-hierarchical/predictive_halfCval.R
-
-hierarchical/predictiveComparison.R
-
-hierarchical/plot_posterior.r
-
-hierarchical/MultipleDsetsRopeSignedRank.R
-
-hierarchical/multiple_dsets_generative.R
-
-hierarchical/hierarchical-t-test.rda
 
 *.hpp
 
 *.cpp
 
+
+*.rda
+
+hierarchical/12-1000-student1
+
+*.003_dsets_2_delta_acc_cauchy_samples_sizes_50simulationID_11
+
+hierarchical/delta00Std00.003_dsets_2_delta_acc_cauchy_samples_sizes_50simulationID_12
+
+hierarchical/delta00Std00.003_dsets_2_delta_acc_cauchy_samples_sizes_50simulationID_13
+
+hierarchical/delta00Std00.003_dsets_2_delta_acc_cauchy_samples_sizes_50simulationID_14
+
+hierarchical/12-1000-student4
+
+hierarchical/12-1000-student2
+
+hierarchical/12-1000-student3
