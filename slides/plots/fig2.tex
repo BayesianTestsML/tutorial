@@ -1,0 +1,64 @@
+\documentclass[tikz]{standalone}
+
+
+
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+% \usepackage{etex,etoolbox}
+\usepackage{hyperref}   % use for hypertext links, including those to external documents and URLs
+        % don't add extra vertical space
+
+\usepackage{pgfplots}
+
+\usepackage{tikz}
+\usepackage{tabu}
+\usepackage{colortbl}
+\usepackage{pifont}
+\usepackage{eurosym}
+\usepackage{bm}
+\usepackage{bbding}
+ 
+
+
+\usepackage{pgfplots}
+
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+
+  \usetikzlibrary{positioning,calc,fit,shapes.geometric,patterns}
+  \pgfdeclarelayer{background}
+  \pgfdeclarelayer{foreground}
+  \pgfsetlayers{background,main,foreground}
+  \tikzstyle{vec}=[circle,inner sep=1pt,outer sep=-1pt,fill]
+  \tikzstyle{border}=[thick]
+  \tikzstyle{favborder}=[border,dotted]
+  \tikzstyle{exclborder}=[border,dashed]
+\usepackage{pdfsync}
+\usepackage{wrapfig}
+
+\begin{document}
+  \begin{tikzpicture}[framed,thick,scale=0.6, every node/.style={transform shape},font=\Large]
+\begin{axis}[
+  no markers, domain=0:10, samples=100,
+  axis lines=none, xlabel=$~$, ylabel=$\mu$,
+  every axis y label/.style={at=(current axis.above origin),anchor=south},
+  every axis x label/.style={at=(current axis.right of origin),anchor=west},
+  height=5cm, width=12cm,
+  xtick={4,6.5}, ytick=\empty,
+  enlargelimits=false, clip=false, axis on top,
+  grid = major
+  ]
+  \addplot [fill=cyan!20, draw=black, domain=-1.8:1.8] {gauss(0,0.6)} ;
+   \addplot [fill=red!20, draw=black, domain=3.2:9.2] {gauss(6,0.6)};
+%   \addplot [very thick,cyan!50!black] {gauss(6.5,1)};
+  \node (mu) at (axis cs:0,0.76) {$F$};
+    \node (pt) at (axis cs:6,0.76) {$\mathcal{P}(F)$};
+    \node (c) at (axis cs:-1.3,0) {};
+  \node (x) at (axis cs:-4.1,0.35) {~~~~$x_1,x_2,\dots,x_n$};
+%     \node (g) at (axis cs:0,0.05) {$\mathcal{N}(x;\theta,1)$};
+%   \draw [<-, right=of x] (x)--(c) {};
+ 
+\end{axis}
+\end{tikzpicture}
+\end{document}
