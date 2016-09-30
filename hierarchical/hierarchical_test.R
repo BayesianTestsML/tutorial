@@ -1,7 +1,8 @@
-hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType,chains=4) {
+hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=8) {
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
+  library(matrixStats)
   #for sampling from non-standardized topt
   library(metRology)
   
@@ -14,7 +15,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   
   Nsamples <- dim(x)[2]
   q <- dim(x)[1]
-  
+  sample_file <- paste(sample_file,".StanOut")
   
   
   
