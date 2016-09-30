@@ -51,8 +51,8 @@ predictive_halfCval <- function() {
   how_many_dsets <- length(dsetsList)
   
   #debug
-  how_many_dsets <- 3
-  how_many_classifiers <- 3
+  #how_many_dsets <- 3
+  #how_many_classifiers <- 3
   
   #generate always the same permutations
   set.seed(42)
@@ -100,18 +100,18 @@ predictive_halfCval <- function() {
       }
       
       #xTrain  contains the first 50 results on each dset
-      xTrain<-x[,1:50]
+      xTrain<-x[,1:30]
       #xTest  contains all the results (100 for each dset) for the dset in the second half of the permutation
-      xTest<- x[,51:100]
+      xTest<- x[,31:100]
       
       #run the hierarchical test
       #we do not provide a simulation ID as this is run locally
       simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),sep = "-")
       
       #debug
-      xTrain<-xTrain[1:3,1:5]
+      #xTrain<-xTrain[1:3,1:5]
       #debug 2 chains
-      currentResults <- hierarchical.test (xTrain,rho,rope_min,rope_max,simulationID,std_upper_bound,chains=2)
+      currentResults <- hierarchical.test (xTrain,rho,rope_min,rope_max,simulationID,std_upper_bound)
       #store the results
       stanResults[[counter]] <- currentResults
       hierDeltaEachDset <- c(hierDeltaEachDset, currentResults$delta_each_dset)
@@ -127,6 +127,8 @@ predictive_halfCval <- function() {
   errHier <- hierDeltaEachDset - actual
   errMle <- mleDeltaEachDset -actual
   predictiveHalfCval <- data.frame(classifierI,classifierJ,dset,hierDeltaEachDset,mleDeltaEachDset,actual)
+  predictiveHalfCval$errMle <- predictiveHalfCval$mleDeltaEachDset - predictiveHalfCval$actual
+  predictiveHalfCval$errHier <- predictiveHalfCval$hierDeltaEachDset - predictiveHalfCval$actual
   write.matrix(predictiveHalfCval,file="predictiveHalfCval.csv",sep=",")
   
   save(stanResults, file = Rdata_filename)

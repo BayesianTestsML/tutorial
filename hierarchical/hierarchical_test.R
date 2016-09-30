@@ -1,4 +1,4 @@
-hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=8) {
+hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=4) {
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
