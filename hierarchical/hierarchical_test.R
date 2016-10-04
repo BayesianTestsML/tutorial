@@ -1,4 +1,4 @@
-hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=4) {
+hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=8) {
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
@@ -113,8 +113,8 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
     }
     
     #this calls the Gaussian
-    else if (samplingType=="normal") {
-      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains)
+    else if (samplingType=="gaussian") {
+      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains=chains)
     }
     #estimate of the posterior variance for comparison purposes
     #     posteriorSigma<-vector(length = q)
@@ -132,7 +132,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
     }
     
     #this calls the Gaussian, not yet implemented
-    else if (samplingType=="normal") {
+    else if (samplingType=="gaussian") {
       stanfit <-  stan(file = 'hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
     }
   }

@@ -48,3 +48,7 @@ hierarchical/15-1000-student4
 *.StanOut5
 
 *.html
+
+*.arff
+
+*.pdf
