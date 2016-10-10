@@ -3,7 +3,6 @@
   library(MASS)
   library(matrixStats)
   library(rstan)
-  library(loo)
   rstan_options(auto_write = TRUE)
   options(mc.cores = parallel::detectCores())
   

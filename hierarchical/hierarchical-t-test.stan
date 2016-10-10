@@ -135,3 +135,5 @@
     //logLik is computed in the previous block 
     increment_log_prob(sum(logLik));   
  }
+ 
+ 
