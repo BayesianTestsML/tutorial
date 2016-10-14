@@ -1,4 +1,4 @@
-friedman1Simul <- function(){
+crossValCar <- function(){
   #implements cross-validation adopting the classifiers from the caret package
   library(mlbench)
   library(caret)
@@ -25,20 +25,24 @@ friedman1Simul <- function(){
   fit.lda <- train(data$x, data$class, method="lda", trControl=control, tuneLength = 1)
   ldaAccuracy <- fit.lda$resample$Accuracy
   
-  #SVM
-  set.seed(currentSeed)
-  fit.svm <- train(diabetes~., data=PimaIndiansDiabetes, method="svmRadial", trControl=control, tuneLength = 1)
-  svmAccuracy <- fit.svm$resample$Accuracy
-
-    
-  # kNN
-  set.seed(currentSeed)
-  fit.knn <- train(diabetes~., data=PimaIndiansDiabetes, method="knn", trControl=control, tuneLength = 1)
-  knnAccuracy <- fit.knn$resample$Accuracy
   
-  # Random Forest
-  set.seed(currentSeed)
-  fit.rf <- train(diabetes~., data=PimaIndiansDiabetes, method="rf", trControl=control, tuneLength = 1)
-  rfAccuracy <- fit.rf$resample$Accuracy
+  
+  
+  
+  #   #SVM
+  #   set.seed(currentSeed)
+  #   fit.svm <- train(diabetes~., data=PimaIndiansDiabetes, method="svmRadial", trControl=control, tuneLength = 1)
+  #   svmAccuracy <- fit.svm$resample$Accuracy
+  # 
+  #     
+  #   # kNN
+  #   set.seed(currentSeed)
+     fit.knn <- train(diabetes~., data=PimaIndiansDiabetes, method="knn", trControl=control, tuneLength = 1)
+     knnAccuracy <- fit.knn$resample$Accuracy
+  #   
+  #   # Random Forest
+  #   set.seed(currentSeed)
+  #   fit.rf <- train(diabetes~., data=PimaIndiansDiabetes, method="rf", trControl=control, tuneLength = 1)
+  #   rfAccuracy <- fit.rf$resample$Accuracy
   
 }

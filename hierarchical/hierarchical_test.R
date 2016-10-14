@@ -8,7 +8,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   
   #------------------------------------------------------------------------------- 
   if ((max(x))>1 & rope_max < 0.02) {
-    stop('value of rope_max (0.02) not compatible with scale of provided x')
+    stop('value of rope_max  not compatible with scale of provided x')
   }
   
   varianceModel='posterior' #code supports also fixedVariance (using MLE as known value) but this is only for debugging purposes
