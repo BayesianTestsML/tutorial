@@ -3,6 +3,73 @@ import numpy.matlib
 
 LEFT, ROPE, RIGHT = range(3)
 
+def correlated_ttest_MC(x, rope, runs=1,  nsamples=50000):
+    """
+    See correlated_ttest module for explanations
+    """
+    if x.ndim == 2:
+        x = x[:, 1] - x[:, 0]
+    diff=x
+    n = len(diff)
+    nfolds = n / runs
+    x = np.mean(diff)
+    # Nadeau's and Bengio's corrected variance
+    var = np.var(diff, ddof=1) * (1 / n + 1 / (nfolds - 1))
+    if var == 0:
+        return int(x < rope), int(-rope <= x <= rope), int(rope < x)
+    
+    return x+np.sqrt(var)*np.random.standard_t( n - 1, nsamples)
+                                  
+    
+
+## Correlated t-test
+def correlated_ttest(x, rope, runs=1, verbose=False, names=('C1', 'C2')):
+    import scipy.stats as stats
+    """
+    Compute correlated t-test
+ 
+    The function uses the Bayesian interpretation of the p-value and returns
+    the probabilities the difference are below `-rope`, within `[-rope, rope]`
+    and above the `rope`. For details, see `A Bayesian approach for comparing
+    cross-validated algorithms on multiple data sets
+    <http://link.springer.com/article/10.1007%2Fs10994-015-5486-z>`_,
+    G. Corani and A. Benavoli, Mach Learning 2015.
+ 
+    |
+    The test assumes that the classifiers were evaluated using cross
+    validation. The number of folds is determined from the length of the vector
+    of differences, as `len(diff) / runs`. The variance includes a correction
+    for underestimation of variance due to overlapping training sets, as
+    described in `Inference for the Generalization Error
+    <http://link.springer.com/article/10.1023%2FA%3A1024068626366>`_,
+    C. Nadeau and Y. Bengio, Mach Learning 2003.)
+ 
+    |
+    Args:
+    x (array): a vector of differences or a 2d array with pairs of scores.
+    rope (float): the width of the rope  
+    runs (int): number of repetitions of cross validation (default: 1)
+    return: probablities (tuple) that differences are below -rope, within rope or
+        above rope
+    """
+    if x.ndim == 2:
+        x = x[:, 1] - x[:, 0]
+    diff=x
+    n = len(diff)
+    nfolds = n / runs
+    x = np.mean(diff)
+    # Nadeau's and Bengio's corrected variance
+    var = np.var(diff, ddof=1) * (1 / n + 1 / (nfolds - 1))
+    if var == 0:
+        return int(x < rope), int(-rope <= x <= rope), int(rope < x)
+    pr = 1-stats.t.cdf(rope, n - 1, x, np.sqrt(var))
+    pl = stats.t.cdf(-rope, n - 1, x, np.sqrt(var))
+    pe=1-pl-pr
+    if verbose:
+        print('P({c1} > {c2}) = {pl}, P(rope) = {pe}, P({c2} > {c1}) = {pr}'.
+              format(c1=names[0], c2=names[1], pl=pl, pe=pe, pr=pr))
+    return pl, pe, pr
+    
 ## SIGN TEST
 def signtest_MC(x, rope, prior_strength=1, prior_place=ROPE, nsamples=50000):
     """
