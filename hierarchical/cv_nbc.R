@@ -1,4 +1,4 @@
-cv_competing_nbc <- function(nruns,nfolds,n,theta_diff,theta_star) {
+cv_competing_nbc <- function(nruns,nfolds,n,theta_diff,theta_star,seed=0) {
   # [results]=cv_competing_nbc(nruns,nfolds,n,theta_diff,theta_star)
   #   implements cross-validation, given the number or runs, folds, 
   #   data set size (n) and theta. Compares 2 nbc which uses two different feature for the prediction .

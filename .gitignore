@@ -30,3 +30,25 @@ hierarchical/12-1000-student3
 hierarchical/15-1000-student4
 
 *.dat*
+
+*.StanOut1
+
+*.StanOut2
+
+*.StanOut4
+
+*.StanOut3
+
+*.StanOut6
+
+*.StanOut8
+
+*.StanOut7
+
+*.StanOut5
+
+*.html
+
+*.arff
+
+*.pdf

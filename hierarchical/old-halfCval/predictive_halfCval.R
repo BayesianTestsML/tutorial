@@ -1,17 +1,16 @@
-#compares the predictive estimates yielded by the Gaussian and by the Student. It infers the model on the first 50 cross-validation  observations 
-#and computed the marginal likelihood of the remaining 50
+#compares the predictive estimates yielded by the MLE and  the hierarchical model. 
+#It infers the mean difference on the first 50 cross-validation  observations 
+#and predicts the mean of the remaining 50 results.
+
 predictive_halfCval <- function() {
-  
   library(MASS)
-  library(matrixStats)
   library(rstan)
   rstan_options(auto_write = TRUE)
   
   options(mc.cores = parallel::detectCores())
   source ("hierarchical_test.R")
-  source ("getMargLik.R")
   std_upper_bound <- 1000
-  standardization <- 1 #we run on standardized data
+  standardization <- 1 
   
   #utiliy function which gets the average score of the given classifier on each data set
   getAvgScore <- function (currentClassifier,score) {
@@ -23,13 +22,6 @@ predictive_halfCval <- function() {
   }
   
   load("uci_data.RData")
-  
-  #output parameters 
-  
-  #check arguments
-  if (std_upper_bound<=1){
-    stop("std_std_upper_bound should be larger than 1")
-  }
   
   
   #for each couple of classifiers: p_value_sign_rank,prob_classA_delta0,prob_rope_delta0,prob_classB_delta0
@@ -43,7 +35,7 @@ predictive_halfCval <- function() {
   nFolds <- max (foldID)
   rho=1/nFolds
   
-  filename <- paste("uciResults_predictive")
+  filename <- paste("uciResultsHalfCval")
   Rdata_filename <- paste (filename,"Rdata",sep=".")
   
   
@@ -57,45 +49,46 @@ predictive_halfCval <- function() {
   how_many_classifiers <- max(unique(classifierId))
   dsetsList <- unique(dsetId)
   how_many_dsets <- length(dsetsList)
+  
+  #debug
+  #how_many_dsets <- 3
+  #how_many_classifiers <- 3
+  
+  #generate always the same permutations
+  set.seed(42)
+  
+  
   classifier_names <- c('naive Bayes','aode','hnb','j48','j48_grafted')  #hard-coded
   how_many_comparisons <- how_many_classifiers*(how_many_classifiers-1)/2 #number of pairwise comparisons
   
+  stanResults <- vector(mode='list', length=how_many_comparisons) 
+  
   #fields to be filled during the multiple comparisons
-  margLikNormal<-matrix(nrow = how_many_comparisons,ncol = how_many_dsets)
-  margLikStudent<-matrix(nrow = how_many_comparisons,ncol = how_many_dsets)
-  classifierI <- vector(length = how_many_comparisons, mode = "integer")
-  classifierJ <- vector(length = how_many_comparisons, mode = "integer")
-  studentTime <- vector(length = how_many_comparisons)
-  normalTime <- vector(length = how_many_comparisons)
-  hierarchicalResultsStudent <- list()
-  hierarchicalResultsNormal <- list()
+  howManyPredictions <- how_many_comparisons*how_many_dsets
+  classifierI <- vector()
+  classifierJ <- vector()
+  dset <- vector()
+  hierDeltaEachDset <- vector()
+  mleDeltaEachDset <- vector ()
+  actual <- vector()
   
   counter <- 1
+  
   for (i in 1: (how_many_classifiers-1) ) {
     for (j in (i+1) : how_many_classifiers){
-      #debug
-      i<-4
-      j<-5
-      
+      print('classifiers')
       show(c(i,j))
-      
-      classifierI[counter] <- i
-      classifierJ[counter] <- j
-      
       
       #prepare the data for  the hierarchical test
       results <- cbind (classifierId, dsetId, score, foldID)
       resultsI  <- results[classifierId==i,] 
       resultsJ  <- results[classifierId==j,]
       
-      #sort by dataset and then by fold
-      #resultsI<-mat.sort(resultsI, c(2,4))
-      #resultsJ<-mat.sort(resultsJ, c(2,4))
-      
       #check results are consistently paired as for dataset and foldID
       #data are already properly sorted, so this control pases
       #otherwise we should sort the matrixes
       stopifnot( mean (resultsI[,c(2,4)]==resultsJ[,c(2,4)]) == 1)
+      #diffIJ is a matrix, the first column stores the dSetID, the second the 100 differences for that dset
       diffIJ <- cbind (resultsI[,2] , resultsI[,3]-resultsJ[,3])
       
       
@@ -106,39 +99,39 @@ predictive_halfCval <- function() {
         x[dsetIdx,]  <- t (tmp [,2])
       }
       
-      xTrain<-x[,1:ncol(x)/2]
-      xTest<- x[,(ncol(x)/2+1):ncol(x)]
+      #xTrain  contains the first 50 results on each dset
+      xTrain<-x[,1:30]
+      #xTest  contains all the results (100 for each dset) for the dset in the second half of the permutation
+      xTest<- x[,31:100]
       
       #run the hierarchical test
       #we do not provide a simulation ID as this is run locally
-      samplingType<-"student"
-      simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),samplingType,sep = "-")
-      startTime<-Sys.time()
-      hierarchicalResultsStudent[[counter]] <- hierarchical.test (xTrain,rho,rope_min,rope_max,simulationID,std_upper_bound,samplingType)
-      stopTime<-Sys.time()
-      studentTime[counter]<-(stopTime-startTime)
-      #getMargLik returns a row vector 1 x nDsets
-      margLikStudent[counter,]<-getMargLik(hierarchicalResultsStudent[[counter]],xTest,rho);
-      write.matrix(margLikStudent,file="margLikStudent.csv",sep=",")
+      simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),sep = "-")
       
-      samplingType<-"normal"
-      simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),samplingType,sep = "-")
-      startTime<-Sys.time()
-      hierarchicalResultsNormal[[counter]] <- hierarchical.test (xTrain,rho,rope_min,rope_max,simulationID,std_upper_bound,samplingType)
-      stopTime<-Sys.time()
-      normalTime[counter]<-(stopTime-startTime)
-      margLikNormal[counter,]<-getMargLik(hierarchicalResultsNormal[[counter]],xTest,rho);
-      write.matrix(margLikNormal,file="margLikNormal.csv",sep=",")
-      
-      counter <- counter + 1
+      #debug
+      #xTrain<-xTrain[1:3,1:5]
+      #debug 2 chains
+      currentResults <- hierarchical.test (xTrain,rho,rope_min,rope_max,simulationID,std_upper_bound)
+      #store the results
+      stanResults[[counter]] <- currentResults
+      hierDeltaEachDset <- c(hierDeltaEachDset, currentResults$delta_each_dset)
+      currentMleDeltaEachDset <- apply(xTrain,1,mean)
+      mleDeltaEachDset <- c(mleDeltaEachDset, currentMleDeltaEachDset)
+      actual <- c (actual, apply(xTest,1,mean))
+      classifierI <- c(classifierI,rep(i,how_many_dsets))
+      classifierJ <- c(classifierJ,rep(j,how_many_dsets))
+      dset <- c(dset,1:how_many_dsets)
     }
   }
   
-  results <- list() 
-  results[[1]] <- list('margLikNormal'=margLikNormal,
-                       'margLikStudent'=margLikStudent)
+  errHier <- hierDeltaEachDset - actual
+  errMle <- mleDeltaEachDset -actual
+  predictiveHalfCval <- data.frame(classifierI,classifierJ,dset,hierDeltaEachDset,mleDeltaEachDset,actual)
+  predictiveHalfCval$errMle <- predictiveHalfCval$mleDeltaEachDset - predictiveHalfCval$actual
+  predictiveHalfCval$errHier <- predictiveHalfCval$hierDeltaEachDset - predictiveHalfCval$actual
+  write.matrix(predictiveHalfCval,file="predictiveHalfCval.csv",sep=",")
   
-  save(results, file = Rdata_filename)
+  save(stanResults, file = Rdata_filename)
   
   return (results)
   

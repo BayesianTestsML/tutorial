@@ -1,11 +1,15 @@
-hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType,chains=4) {
+hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bound,samplingType="student",chains=8) {
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
+  library(matrixStats)
   #for sampling from non-standardized topt
   library(metRology)
   
   #------------------------------------------------------------------------------- 
+  if ((max(x))>1 & rope_max < 0.02) {
+    stop('value of rope_max  not compatible with scale of provided x')
+  }
   
   varianceModel='posterior' #code supports also fixedVariance (using MLE as known value) but this is only for debugging purposes
   
@@ -14,7 +18,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   
   Nsamples <- dim(x)[2]
   q <- dim(x)[1]
-  
+  sample_file <- paste(sample_file,".StanOut")
   
   
   
@@ -89,8 +93,8 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
   
   #notice the lower bound to 0
   dataList = list(
-    deltaLow = -1/stdX,
-    deltaHi = 1/stdX,
+    deltaLow = -max(abs(x)),
+    deltaHi = max(abs(x)),
     stdLow = 0,
     stdHi = std_within*std_upper_bound,
     std0Low = 0,
@@ -112,8 +116,8 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
     }
     
     #this calls the Gaussian
-    else if (samplingType=="normal") {
-      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains)
+    else if (samplingType=="gaussian") {
+      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains=chains)
     }
     #estimate of the posterior variance for comparison purposes
     #     posteriorSigma<-vector(length = q)
@@ -131,7 +135,7 @@ hierarchical.test <- function(x, rho,rope_min,rope_max,sample_file, std_upper_bo
     }
     
     #this calls the Gaussian, not yet implemented
-    else if (samplingType=="normal") {
+    else if (samplingType=="gaussian") {
       stanfit <-  stan(file = 'hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
     }
   }

@@ -1,4 +1,4 @@
-/*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets.
+/*this version implements a Gaussian hyper-prior
 */
 
   data {
@@ -74,19 +74,10 @@
     //sigma of each data set: : vector of lenght q.
     vector<lower=stdLow,upper=stdHi>[q] sigma; 
     
-    /* the domain of (nu - 1) starts from 0
-    and can be given a gamma prior*/
-    real<lower=0> nuMinusOne; 
-    
-    //parameters of the Gamma prior on nuMinusOne
-    real<lower=1,upper=2> gammaAlpha;
-    real<lower=0.01, upper=0.1> gammaBeta;
     
   }
 
  transformed parameters {
-    //degrees of freedom
-    real<lower=1> nu ;
     
     /*difference between the data (x matrix) and 
     the vector of the q means.*/
@@ -102,8 +93,6 @@
     
     vector[q] logLik;
    
-    //degrees of freedom
-    nu <- nuMinusOne + 1 ;
     
     //1 over the variance of each data set
     oneOverSigma2 <- rep_vector(1, q) ./ sigma;
@@ -122,18 +111,14 @@
   }
 
   model {
-    /*mu0 and std0 are not explicitly sampled here.
+    /*delta0 and std0 are not explicitly sampled here.
     Stan automatically samples them: mu0 as uniform and std0 as
     uniform over its domain (std0Low,std0Hi).*/
 
-    //sampling the degrees of freedom
-    nuMinusOne ~ gamma ( gammaAlpha, gammaBeta);
     
     //vectorial sampling of the delta_i of each data set
-    delta ~ student_t(nu, delta0, std0);
+    delta ~ normal (delta0, std0);
     
     //logLik is computed in the previous block 
     increment_log_prob(sum(logLik));   
  }
- 
- 
