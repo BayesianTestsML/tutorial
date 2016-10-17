@@ -1,0 +1,81 @@
+sommario delle 54 deltaEachDataSet
+
+varianza consistente tra sigmaHat, sigmaPosterior Student and Gaussian
+deltaEachDset con Student consistente tra sigmaHat and sigmaPosterior
+deltaEachDset con Student (posterior) almost consistent con deltaEachDset Gaussian
+
+sommario delle delta_i a posteriori su 54 dset
+
+sigmaHat coerente con sigma posterior, sia sotto stima Gauss sia sotto stima Student
+
+> summary(deltaGauss * resultsGaussian[[1]]$stdX)
+     Min.   1st Qu.  	  Median    Mean   	3rd Qu.      Max. 
+-0.135500 -0.025660 	-0.008785 	-0.019 		-0.003323  0.015700 
+
+differenza tra media e mediana in quanto tutti gli outliers sono nella stessa coda
+il modello simmetrico non può’ gestire le due code asimmetriche
+
+
+>fittiamo una gaussiana MLE su questi delta
+fitdistr(deltaGauss * resultsGaussian[[1]]$stdX,"normal")
+       mean            sd     
+  -0.019117154    0.026542829 
+ ( 0.003612021) ( 0.002554085)
+
+
+risultato coerente con la stima di delta0 del modello gaussiano
+Gaussian : summary of delta0 (mediana e moda coincidono con la media di delta0)
+  Min.   1st Qu.    	Median      Mean   	3rd Qu.      Max. 
+-0.036150 -0.021490 	-0.019    -0.019 	-0.015910 -0.001412 
+
+>fittiamo una t su questi delta
+fitdistr(deltaGauss * resultsGaussian[[1]]$stdX,"normal")
+       m              s              df     
+  -0.009749500    0.010455597    1.650051219 
+
+
+coerente con i risultati del modello Student:
+Student (posterior var): summary of delta0
+Min.    1st Qu.     Median      Mean   3rd Qu.       Max. 
+-0.025 	-0.012     -0.009      -0.01  -0.0075 -0.0006 
+
+
+-le delta_i sono circa equivalenti tra modello student e modello gaussiano
+> summary(deltaStudent * resultsPosteriorVar[[1]]$stdX)
+Min.   1st Qu.   Median  Mean   	3rd Qu.      Max. 
+-0.164 -0.018 	-0.008	 -0.018 	-0.004  0.009 
+
+Quindi le delta_i sono coerenti fra modello guazziamo e student.
+se fitto una student sulle delta-i del modello gaussiano trovo la delta0 del modello Student con prior gerarchica.
+
+Notare i gradi di libertà’ molto bassi.
+
+Questa l’incerteza sui gradi di libera’. in mediana abbiamo quasi una cauchy.
+summary (resultsPosteriorVar[[1]]$stanResults$nu)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  1.000   1.508   1.987   2.333   2.661  99.950
+
+La differenza tra gauss e student e’ giustificata dal fatto he il boxplot delle delta_i mostra molti outliers,
+tutti nella stessa coda.
+boxplot (deltaStudent * resultsPosteriorVar[[1]]$stdX) 
+
+
+Problema: come mai non converge la stima dei gradi di libertà’?
+ 
+
+>delta_i empiriche
+   meanMLE        
+ Min.   :-5.29567  
+ 1st Qu.:-0.85549  
+ Median :-0.22210  
+ Mean   :-0.59381  
+ 3rd Qu.:-0.07024  
+ Max.   : 1.36627  
+
+
+
+
+
+
+
+proviamo a fittare MLE una student e una gaussiana sulle differenze empiriche delta_i

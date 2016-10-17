@@ -11,7 +11,7 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
   if ((max(x))>1 & rope_max < 0.02) {
     stop('value of rope_max  not compatible with scale of provided x')
   }
-  
+  sample_file <- paste('stanOut/',sample_file)
   varianceModel='posterior' #code supports also fixedVariance (using MLE as known value) but this is only for debugging purposes
   
   #we always standardize the received data 
@@ -113,12 +113,12 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
   if (varianceModel=="posterior"){
     #this calls the Student with learnable dofs 
     if (samplingType=="student") {
-      stanfit <-  stan(file = 'hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=chains)
+      stanfit <-  stan(file = 'stan/hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=chains)
     }
     
     #this calls the Gaussian
     else if (samplingType=="gaussian") {
-      stanfit <-  stan(file = 'hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains=chains)
+      stanfit <-  stan(file = 'stan/hierarchical-t-testGaussian.stan', data = dataList,sample_file=sample_file, chains=chains)
     }
     #estimate of the posterior variance for comparison purposes
     #     posteriorSigma<-vector(length = q)
@@ -132,12 +132,12 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
     
     #this calls the Student with learnable dofs 
     if (samplingType=="student") {
-      stanfit <-  stan(file = 'hierarchical-t-test-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=10)
+      stanfit <-  stan(file = 'stan/hierarchical-t-test-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=10)
     }
     
     #this calls the Gaussian, not yet implemented
     else if (samplingType=="gaussian") {
-      stanfit <-  stan(file = 'hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
+      stanfit <-  stan(file = 'stan/hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
     }
   }
   

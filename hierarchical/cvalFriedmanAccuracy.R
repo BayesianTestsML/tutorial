@@ -4,7 +4,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   #friedmanType is the friedman function (1,2,3) while reps is the number of repetitions
   #of the process data generation/cross-validation.
   #the family contains right onw 18 data sets.
-  #eventually returns the MLE estimates and the shrinked estimates in each repetitions
+  #eventually returns the MLE estimates and the shrinked estimates in each repetiti ons
   library(mlbench)
   library(caret)
   source('generateFriedmanData.R')
@@ -37,7 +37,8 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
       
       #for simplicity we focus on the difference between  lda and cart
       #we need to set the seed in order to pair the folds
-      currentSeed <- rnorm(1)
+      #we also need the seed to be different between each execution
+      currentSeed <- as.numeric(Sys.time())
       set.seed(currentSeed)
       fit.lda <- train(data$x, data$class, method="lda", trControl=control, tuneLength = 1)
       set.seed(currentSeed)
@@ -46,7 +47,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
       
       #we exploit the fact that results vectors are initially filled with FALSE
       #and we save the settings of the experiments (equal for all data sets)
-      firstAvailable <- min (which (redundantFeats == FALSE))
+      firstAvailable <- min (which (sampleSize == FALSE))
       redundantFeats[firstAvailable] <- settings[currentSetting,]$redundantFeats
       sampleSize[firstAvailable] <- settings[currentSetting,]$sampleSize
       friedmanSd[firstAvailable] <- settings[currentSetting,]$friedmanSd
@@ -68,7 +69,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   }
   
   #at this points we save the result to file
-  csvFilename <- paste('cvalAccFriedman',friedmanType,".csv",sep='')
+  csvFilename <- paste('csvResults/cvalAccFriedman',friedmanType,".csv",sep='')
   results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart)
   write.matrix(results,file=csvFilename, sep=",")
   

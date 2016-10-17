@@ -29,7 +29,7 @@ actualFriedmanAccuracy <- function(friedmanType=1, reps=1000) {
     knnAccuracy  <- vector(length = reps)
     
     for (currentRep in 1:reps){
-      cat(currentRep,'\n')
+      #cat(currentRep,'\n')
       #the following functions should generate the data according to the given settings and discretize according to
       #the supplied threshold
       trainingData <- generateFriedmanData(friedmanType,settings[currentSetting,])
@@ -58,7 +58,7 @@ actualFriedmanAccuracy <- function(friedmanType=1, reps=1000) {
   settings$repetitions <- rep(reps,length(testSettings$sampleSize))
   settings$FriedmanType <- rep(friedmanType,length(testSettings$sampleSize))
   #at this points we save the result to file
-  csvFilename <- paste('actualAccFriedman',friedmanType,".csv",sep='')
+  csvFilename <- paste('csvResults/actualAccFriedman',friedmanType,".csv",sep='')
   write.matrix(settings,file=csvFilename, sep=",")
   
   
