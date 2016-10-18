@@ -1,3 +1,0 @@
-sensitivityAnalysis <- function (classifierI, classifierJ){
-  
-}
