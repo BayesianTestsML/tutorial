@@ -1,12 +1,28 @@
 analyzeFriedmanResults <- function (friedmanType=1) {
   
-  actualFileName <- paste('actualAccFriedman',friedmanType,'.csv',sep = '')
-  actualAccFriedman <- read.csv(actualFileName)
+  #the case in which individual families have to be analyzed
+  if (friedmanType < 4){
+    actualFileName <- paste('csvResults/actualAccFriedman',friedmanType,'.csv',sep = '')
+    actualAccFriedman <- read.csv(actualFileName)
+    
+    cvalFileName <- paste('csvResults/cvalAccFriedman',friedmanType,'.csv',sep = '')
+    cvalAccFriedman <- read.csv(cvalFileName)
+  }
   
-  cvalFileName <- paste('cvalAccFriedman',friedmanType,'.csv',sep = '')
-  cvalAccFriedman <- read.csv(cvalFileName)
-  
-  
+  #the case in which the three families are jointly experimented
+  #following code is a bit rough but works
+  if (friedmanType== 4){
+    actualFileName <- 'csvResults/actualAccFriedman1.csv'
+    actualAccFriedman1 <- read.csv(actualFileName)
+    actualFileName <- 'csvResults/actualAccFriedman2.csv'
+    actualAccFriedman2 <- read.csv(actualFileName)
+    actualFileName <- 'csvResults/actualAccFriedman3.csv'
+    actualAccFriedman3 <- read.csv(actualFileName)
+    actualAccFriedman <- rbind (actualAccFriedman1, actualAccFriedman2, actualAccFriedman3)
+    
+    cvalFileName <- paste('csvResults/cvalAccFriedman',friedmanType,'.csv',sep = '')
+    cvalAccFriedman <- read.csv(cvalFileName)
+  }
   
   #mean estimation error on the whole family, averaged over the repetitions
   #check how many repetitions: how many times the first dset has been run
@@ -19,7 +35,8 @@ analyzeFriedmanResults <- function (friedmanType=1) {
   
   maeHier <- vector(length = repetitions)
   maeMle <- vector(length = repetitions)
-  proportionHierBeatsMLe <- vector(length = repetitions)
+  proportionDsetsHierBeatsMLe <- vector(length = repetitions)
+  HierBeatsMLeJointMae <- vector(length = repetitions)
   
   counter <- 1
   howManySettings <- dim(actualAccFriedman)[1]
@@ -42,10 +59,14 @@ analyzeFriedmanResults <- function (friedmanType=1) {
     }
     maeHier[currentRep] <- mean(currentMaeHier)
     maeMle[currentRep] <- mean(currentMaeMle)
-    proportionHierBeatsMLe[currentRep] <- mean (currentMaeHier < currentMaeMle)
+    proportionDsetsHierBeatsMLe[currentRep] <- mean (currentMaeHier < currentMaeMle)
+    HierBeatsMLeJointMae[currentRep] <- ifelse ( maeHier[currentRep] < maeMle[currentRep], 1, 0)
   }
   #at this points we save the result to file
   csvFilename <- paste('csvResults/comparisonMleHierFriedman',friedmanType,".csv",sep='')
-  results <- data.frame(maeHier, maeMle, proportionHierBeatsMLe)
-  write.matrix(results,file=csvFilename, sep=",")
+  dsetResults <- data.frame(maeHier, maeMle, proportionDsetsHierBeatsMLe)
+  write.matrix(dsetResults,file=csvFilename, sep=",")
+  
+  results <- list ('dsetResults'=dsetResults, 'HierBeatsMLeJointMae' = HierBeatsMLeJointMae)
+  return (results)
 }

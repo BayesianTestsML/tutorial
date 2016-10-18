@@ -21,7 +21,7 @@ genFriedmanSettings <- function (friedmanType=1){
   #data frame containing all the experimental setups
   #settings and testSettings differ as for the sampleSize, which in trainSetginds varies while in testSettings is always 1000.
   settings <- expand.grid(redundantFeats=redundantFeats,sampleSize=sampleSize,friedmanSd=friedmanSd)
-  
+  # settings$friedmanType <- rep(friedmanType, length(settings$redundantFeats))
   #now we need to accurately estimate the discr threshold.
   #to this end we generate 10000 samples .The threshold is equal for
   #all settings of the same Friedman function, as it is not affected by sample size,

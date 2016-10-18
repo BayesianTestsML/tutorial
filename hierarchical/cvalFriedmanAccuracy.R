@@ -3,6 +3,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   #(10 runs of 10 folds)
   #friedmanType is the friedman function (1,2,3) while reps is the number of repetitions
   #of the process data generation/cross-validation.
+  #if friedmanType=4, we jointly run the first and the second family.
   #the family contains right onw 18 data sets.
   #eventually returns the MLE estimates and the shrinked estimates in each repetiti ons
   library(mlbench)
@@ -11,7 +12,14 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   source('genFriedmanSettings.R')
   source('hierarchical_test.R')
   
-  settings <- genFriedmanSettings(friedmanType)
+  
+  if (friedmanType < 4)
+    settings <- genFriedmanSettings(friedmanType)
+  
+  if (friedmanType == 4){
+    settings <- rbind(genFriedmanSettings(1),genFriedmanSettings(2),genFriedmanSettings(3)) 
+  }
+  
   totExperiments <- dim(settings)[1] * reps
   
   mleDiffLdaCart <-  vector (length = totExperiments)
@@ -33,7 +41,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
     for (currentSetting in 1:dim(settings)[1]){
       
       #the following functions should generate the data according to the given setting
-      data <- generateFriedmanData(friedmanType,settings[currentSetting,])
+      data <- generateFriedmanData(settings$friedmanType[currentSetting],settings[currentSetting,])
       
       #for simplicity we focus on the difference between  lda and cart
       #we need to set the seed in order to pair the folds

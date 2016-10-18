@@ -1,4 +1,4 @@
-actualFriedmanAccuracy <- function(friedmanType=1, reps=1000) {
+actualFriedmanAccuracy <- function(friedmanType=1, reps=500) {
   #estimates actual accuracy of real classifiers on data sets of the Friedman family
   #friedmanType is the friedman function (1,2,3) while reps is the number of repetitions asked for the assessment.
   library(mlbench)
