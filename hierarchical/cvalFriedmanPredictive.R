@@ -94,7 +94,7 @@ library(mlbench)
     kruMaeTrainDeltaI[currentRep]       <-  mean (abs (actualTrainDeltaI - kruModel$delta_each_dset)   )
     
     #store results for later analysis
-    currentTrainList <- list(crossValResults,currentMleDiffLdaCart,actualTrainDeltaI)
+    currentTrainList <- list('crossValResults'=crossValResults,'currentMleDiffLdaCart'=currentMleDiffLdaCart,'actualTrainDeltaI'=actualTrainDeltaI)
     trainData <- list (trainData,  currentTrainList)
     gaussModels <- list(gaussModels, gaussModel)
     hierModels <- list( hierModels, hierModel)
