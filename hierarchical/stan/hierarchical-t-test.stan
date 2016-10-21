@@ -27,6 +27,11 @@
     //correlation (1/(number of folds))
     real rho; 
     
+    real upperAlpha;
+    real lowerAlpha;
+    real upperBeta;
+    real lowerBeta;
+    
      }
 
 
@@ -80,8 +85,8 @@
     real<lower=0> nuMinusOne; 
     
     //parameters of the Gamma prior on nuMinusOne
-    real<lower=1,upper=2> gammaAlpha;
-    real<lower=0.01, upper=0.1> gammaBeta;
+    real<lower=lowerAlpha,upper=upperAlpha> gammaAlpha;
+    real<lower=lowerBeta, upper=upperBeta> gammaBeta;
     
   }
 

@@ -1,4 +1,9 @@
-hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, std_upper_bound=1000,samplingType="student",chains=8) {
+hierarchical.test <- function(x, sample_file, samplingType="student", 
+                              alphaBeta = list('lowerAlpha' =1,'upperAlpha'= 2,'lowerBeta' = 0.01,'upperBeta' = 0.1),
+                              rho = 0.1, rope_min=-0.01, rope_max=0.01, std_upper_bound=1000,chains=8)
+{
+                              
+  
   # rstan_options(auto_write = TRUE)
   # options(mc.cores = parallel::detectCores())
   library(matrixcalc)
@@ -12,14 +17,14 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
   if ((max(x))>1 & rope_max < 0.02) {
     stop('value of rope_max  not compatible with scale of provided x')
   }
-  sample_file <- paste('stanOut/',sample_file)
+  sample_file <- paste('stanOut/',sample_file,sep='')
   
   #we always standardize the received data 
   standardization=1
   
   Nsamples <- dim(x)[2]
   q <- dim(x)[1]
-  sample_file <- paste(sample_file,".StanOut")
+  sample_file <- paste(sample_file,".StanOut",sep='')
   
   
   
@@ -103,14 +108,18 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
     Nsamples = Nsamples,
     q = q ,
     x = x ,
-    rho = rho
+    rho = rho,
+    upperAlpha = alphaBeta$upperAlpha,
+    lowerAlpha = alphaBeta$lowerAlpha,
+    upperBeta = alphaBeta$upperBeta,
+    lowerBeta = alphaBeta$lowerBeta
   )
   
   
   
   startTime<-proc.time()
   
-    #this calls the Student with learnable dofs 
+  #this calls the Student with learnable dofs 
   if (samplingType=="student") {
     stanfit <-  stan(file = 'stan/hierarchical-t-test.stan', data = dataList,sample_file=sample_file, chains=chains)
   }
@@ -131,27 +140,27 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
   
   
   
-    #estimate of the posterior variance for comparison purposes
-    #     posteriorSigma<-vector(length = q)
-    #     for (i in 1:q) {
-    #       posteriorSigma[i]<-median(stanResult$sigma[i])
-    #     }
+  #estimate of the posterior variance for comparison purposes
+  #     posteriorSigma<-vector(length = q)
+  #     for (i in 1:q) {
+  #       posteriorSigma[i]<-median(stanResult$sigma[i])
+  #     }
   # }
   
-#   if (varianceModel=="fixed"){
-#     dataList$sigmaHat <- sigmaHat
-#     
-#     #this calls the Student with learnable dofs 
-#     if (samplingType=="student") {
-#       stanfit <-  stan(file = 'stan/hierarchical-t-test-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=10)
-#     }
-#     
-#     #this calls the Gaussian, not yet implemented
-#     else if (samplingType=="gaussian") {
-#       stanfit <-  stan(file = 'stan/hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
-#     }
-#   }
-#   
+  #   if (varianceModel=="fixed"){
+  #     dataList$sigmaHat <- sigmaHat
+  #     
+  #     #this calls the Student with learnable dofs 
+  #     if (samplingType=="student") {
+  #       stanfit <-  stan(file = 'stan/hierarchical-t-test-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=10)
+  #     }
+  #     
+  #     #this calls the Gaussian, not yet implemented
+  #     else if (samplingType=="gaussian") {
+  #       stanfit <-  stan(file = 'stan/hierarchical-t-testGaussian-fixedSigma.stan', data = dataList,sample_file=sample_file, chains=4)
+  #     }
+  #   }
+  #   
   
   
   
@@ -207,37 +216,39 @@ hierarchical.test <- function(x, rho,rope_min=-0.01,rope_max=0.01,sample_file, s
   
   std <- stanResults$std0
   mu  <- stanResults$delta0
-  if (samplingType=="student") {
-    nu  <- stanResults$nu
-    for (r in 1:postSamples){
+  #for all the student-based model we sample in the same way
+  for (r in 1:postSamples){
+    if ( any (samplingType == c('student', 'studentKruschke', 'studentJuanez'))) {
+      nu  <- stanResults$nu
       cumulativeRope[r] <- pt.scaled(rope_max, df=nu[r], mean=mu[r], sd=std[r]) - pt.scaled(rope_min, df=nu[r], mean=mu[r], sd=std[r])
       cumulativeLeft[r] <- pt.scaled(rope_min, df=nu[r], mean=mu[r], sd=std[r])
       cumulativeRight[r] <- 1-pt.scaled(rope_max, df=nu[r], mean=mu[r], sd=std[r])
-      if (cumulativeRope[r] > cumulativeLeft[r] & cumulativeRope[r] > cumulativeRight[r]){
-        sampledRopeWins <- sampledRopeWins + 1
-      }
-      else if  (cumulativeLeft[r] > cumulativeRope[r] & cumulativeLeft[r] > cumulativeRight[r]){
-        sampledLeftWins <- sampledLeftWins + 1
-      }
-      else {
-        sampledRigthWins <- sampledRigthWins +1
-      }
-      if (mu[r]>0){
-        sampledPositiveWins <- sampledPositiveWins + 1
-      }
-      else {
-        sampledNegativeWins <- sampledNegativeWins + 1
-      }
+    }
+    else if (samplingType=="gaussian") {
+      cumulativeRope[r] <- pnorm(rope_max, mean=mu[r], sd=std[r]) - pnorm(rope_min, mean=mu[r], sd=std[r])
+      cumulativeLeft[r] <- pnorm(rope_min,  mean=mu[r], sd=std[r])
+      cumulativeRight[r] <- 1-pnorm(rope_max, mean=mu[r], sd=std[r])
     }
     
-    
-  }
-  if (samplingType=="normal") {
-    stop ('sampling of the delta_i  for the gaussian case not implemented')
-    for (r in 1:postSamples){
-      sampledDelta[r] <- rnorm(1)*std[r] + mu[r]; 
+    if (cumulativeRope[r] > cumulativeLeft[r] & cumulativeRope[r] > cumulativeRight[r]){
+      sampledRopeWins <- sampledRopeWins + 1
+    }
+    else if  (cumulativeLeft[r] > cumulativeRope[r] & cumulativeLeft[r] > cumulativeRight[r]){
+      sampledLeftWins <- sampledLeftWins + 1
+    }
+    else {
+      sampledRigthWins <- sampledRigthWins +1
+    }
+    if (mu[r]>0){
+      sampledPositiveWins <- sampledPositiveWins + 1
+    }
+    else {
+      sampledNegativeWins <- sampledNegativeWins + 1
     }
   }
+  
+  
+  
   
   probRightNextDelta <- sampledRigthWins/(sampledRigthWins+sampledLeftWins+sampledRopeWins)
   probLeftNextDelta  <- sampledLeftWins/(sampledRigthWins+sampledLeftWins+sampledRopeWins)

@@ -13,17 +13,25 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   source('hierarchical_test.R')
   
   
-  if (friedmanType < 4)
+  if (friedmanType < 4){
     settings <- genFriedmanSettings(friedmanType)
+    friedmanTypeVec <- rep (friedmanType,nrow(settings))
+  }
   
   if (friedmanType == 4){
     settings <- rbind(genFriedmanSettings(1),genFriedmanSettings(2),genFriedmanSettings(3)) 
+    friedmanTypeVec <- 
+      cbind ( t(rep(1,nrow(genFriedmanSettings(1)))), t(rep(2,nrow(genFriedmanSettings(2)))),
+              t(rep(3,nrow(genFriedmanSettings(3))))  )
+    #friedman Type is a vector, containing the friedman Type of each setting
   }
   
   totExperiments <- dim(settings)[1] * reps
-  
   mleDiffLdaCart <-  vector (length = totExperiments)
   hierDiffLdaCart <- vector (length = totExperiments)
+  gaussDiffLdaCart <- vector (length = totExperiments)
+  kruDiffLdaCart <- vector (length = totExperiments)
+  juaDiffLdaCart <- vector (length = totExperiments)
   #knnAccuracy <-  vector (length = totExperiments)
   redundantFeats <- vector (length = totExperiments)
   sampleSize <- vector (length = totExperiments)
@@ -41,7 +49,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
     for (currentSetting in 1:dim(settings)[1]){
       
       #the following functions should generate the data according to the given setting
-      data <- generateFriedmanData(settings$friedmanType[currentSetting],settings[currentSetting,])
+      data <- generateFriedmanData(friedmanTypeVec[currentSetting],settings[currentSetting,])
       
       #for simplicity we focus on the difference between  lda and cart
       #we need to set the seed in order to pair the folds
@@ -69,16 +77,31 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
     stanResults <- hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4)
     currentHierDiffLdaCart <- stanResults$delta_each_dset
     
+    #Gaussian hierarchical model.
+    stanGaussianResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "gaussian")
+    currentHierGaussDiffLdaCart <- stanGaussianResults$delta_each_dset
+    
+    #Kru prior
+    kruResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentKruschke")
+    currentHierKruDiffLdaCart <- kruResults$delta_each_dset
+    
+    #Jua prior
+    juaResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentJuanez")
+    currentHierJuaDiffLdaCart <- juaResults$delta_each_dset
+    
     #we exploit the fact that both vectors are initially filled with FALSE
     firstAvailable <- min (which (mleDiffLdaCart == FALSE))
     mleDiffLdaCart  [ firstAvailable : (firstAvailable + length(currentMleDiffLdaCart) -1 ) ] <- currentMleDiffLdaCart
     hierDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierDiffLdaCart) -1) ] <- currentHierDiffLdaCart
+    gaussDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierGaussDiffLdaCart) -1) ] <- currentHierGaussDiffLdaCart
+    kruDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierKruDiffLdaCart) -1) ] <- currentHierKruDiffLdaCart
+    juaDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierJuaDiffLdaCart) -1) ] <- currentHierJuaDiffLdaCart
     
   }
   
   #at this points we save the result to file
   csvFilename <- paste('csvResults/cvalAccFriedman',friedmanType,".csv",sep='')
-  results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart)
+  results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart,gaussDiffLdaCart,kruDiffLdaCart,juaDiffLdaCart)
   write.matrix(results,file=csvFilename, sep=",")
   
 }

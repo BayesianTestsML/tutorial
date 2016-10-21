@@ -7,18 +7,16 @@ sensitivityNormalStudent <- function (class1, class2){
   #2) verify the sensitivity of the shrinkage estimates
   #3) check the log-posterior
   
-
+  
   library(rstan)
   rstan_options(auto_write = TRUE)
   options(mc.cores = parallel::detectCores())
   source ("hierarchical_test.R")
-
+  source ("logPredictive.R")
+  
   #preliminaries
   stdUpperBound <- 1000
   standardization <- 1 
-  #to have maximum reliability when comparing real classifiers
-  chains = 8
-  
   load("uci_data.RData")
   nFolds <- max (uci_classification$Key.Fold)
   rho=1/nFolds
@@ -50,55 +48,66 @@ sensitivityNormalStudent <- function (class1, class2){
     x[dsetIdx,]  <- t (tmp)
   }
   
-  #debug 
-  chains <- 4
-#debug:currently comment out the  inference of the full model.
+  #DEBUG: LET'S COMMENT OUT ALL THE OTHER VERSION OF THE HIER MODEL  
+  #   simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
+  #   hierPosteriorKru <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentKruschke",chains)
+  #   
+  #   simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
+  #   hierPosteriorJua <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentJuanez",chains)
   
-#   simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
-#   hierPosteriorKru <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentKruschke",chains)
-#     
-#   simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
-#   hierPosteriorJua <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentJuanez",chains)
-#    
-#   simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
-#   hierPosterior <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"student",chains)
-#  
-#   simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
-#   hierPosteriorGauss <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"gaussian",chains)
+  # simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
+  # hierPosteriorGauss <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"gaussian",chains)
   
-  
-   
-  #now implement log-posterior check 
-  #first, infer the model on half the data.
-  trainX <- x[,1:(ncol(x)/2)]
-  testX  <- x[,(ncol(x)/2 + 1):ncol(x)]
-  simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
-  halfPosteriorKru <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentKruschke",chains)
-  halfPosteriorKru$logPredictiveEachDset <- logPredictive(halfPosteriorKru,testX, rho)
-  halfPosteriorKru$logPredictive <- sum (halfPosteriorKru$logPredictiveEachDset)
-  
-  simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
-  halfPosteriorJua <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentJuanez",chains)
-  halfPosteriorJua$logPredictiveEachDset <- logPredictive(halfPosteriorJua,testX, rho)
-  halfPosteriorJua$logPredictive <- sum (halfPosteriorJua$logPredictiveEachDset)
-     
   simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
-  halfPosterior <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"student",chains)
-  halfPosterior$logPredictiveEachDset <- logPredictive(halfPosterior,testX, rho)
-  halfPosterior$logPredictive <- sum (halfPosterior$logPredictiveEachDset)
+  hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student")
   
-  simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
-  halfPosteriorGauss <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"gaussian",chains)
-  halfPosteriorGauss$logPredictiveEachDset <- logPredictive(halfPosteriorGauss,testX, rho)
-  halfPosteriorGauss$logPredictive <- sum (halfPosteriorGauss$logPredictiveEachDset)
-
+  simulationID <- paste('class',class1,'class',class2,"GCsens",sep ='')
+  alphaBeta = list('lowerAlpha' =0.5,'upperAlpha'= 3,'lowerBeta' = 0.005,'upperBeta' = 0.05)
+  hierPosteriorSens <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student", alphaBeta = alphaBeta)
+  
+  
+  #computation of marginal likelihood on half the data.  
+  #   logPredictiveValues <- list()
+  #   #now implement log-posterior check 
+  #   #first, infer the model on half the data.
+  #   trainX <- x[,1:(ncol(x)/2)]
+  #   testX  <- x[,(ncol(x)/2 + 1):ncol(x)]
+  
+  #   simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
+  #   halfPosterior <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"student",chains)
+  #   halfPosterior$logPredictiveEachDset <- logPredictive(halfPosterior,testX, rho)
+  #   logPredictiveValues$Gc <- sum (halfPosterior$logPredictiveEachDset)
+  #   
+  #   simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
+  #   halfPosteriorGauss <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"gaussian",chains)
+  #   halfPosteriorGauss$logPredictiveEachDset <- logPredictive(halfPosteriorGauss,testX, rho)
+  #   logPredictiveValues$Gauss <- sum (halfPosteriorGauss$logPredictiveEachDset)
+  #   
+  #   simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
+  #   halfPosteriorKru <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentKruschke",chains)
+  #   halfPosteriorKru$logPredictiveEachDset <- logPredictive(halfPosteriorKru,testX, rho)
+  #   logPredictiveValues$Kru <- sum (halfPosteriorKru$logPredictiveEachDset)
+  #   
+  #   simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
+  #   halfPosteriorJua <- hierarchical.test (trainX,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentJuanez",chains)
+  #   halfPosteriorJua$logPredictiveEachDset <- logPredictive(halfPosteriorJua,testX, rho)
+  #   logPredictiveValues$Jua <- sum (halfPosteriorJua$logPredictiveEachDset)
+  
+  
+  
+  
+  
+  
+  
   #bayes factor as marginal lik of the proposed model over marg lik of alternative models
-  bayesFactor$Kru <- exp (halfPosterior$logPredictive - halfPosteriorKru$logPredictive)
-  bayesFactor$Jua <- exp (halfPosterior$logPredictive - halfPosteriorJua$logPredictive)
-  bayesFactor$Gauss <- exp (halfPosterior$logPredictive - halfPosteriorGauss$logPredictive)
+  #   bayesFactor <- list()
+  #   bayesFactor$Kru <- exp (logPredictiveValues$Gc - logPredictiveValues$Kru)
+  #   bayesFactor$Jua <- exp (logPredictiveValues$Gc - logPredictiveValues$Jua)
+  #   bayesFactor$Gauss <- exp (logPredictiveValues$Gc - logPredictiveValues$Gauss)
   
-  fileName <- paste('Rdata/sensitivityNormalStudent',class1,class2,'.Rdata', sep='')
-  save (halfPosteriorKru, halfPosteriorJua, halfPosterior, halfPosteriorGauss, bayesFactor, file = 'Rdata/sensitivityNormalStudent.Rdata')  
-  #insert model with alpha and beta enlarged  
-  #and save to Rdata directory
+  fileName <- paste('Rdata/sensitivityStudentAlphaBeta',class1,class2,'.Rdata', sep='')
+  # save (halfPosteriorKru, halfPosteriorJua, halfPosterior, halfPosteriorGauss, bayesFactor, hierPosteriorGauss, hierPosterior, hierPosteriorJua, hierPosteriorKru, file = fileName)  
+  save (hierPosterior, hierPosteriorSens,file = fileName)  
+  
+  
 }

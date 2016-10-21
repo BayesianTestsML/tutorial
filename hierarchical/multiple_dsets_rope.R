@@ -66,6 +66,8 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
   settings <- list() 
   results <- list() 
   counter <- 1
+  klGauss <- matrix(0,reps)
+  klKru <- matrix(0,reps)
   
   for (k in 1:length(how_many_dsets)) {
     for (i in 1:length(sample_sizes)) {
@@ -228,7 +230,7 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
                          'stan_elapsed_time'=stan_elapsed_time)  
   }
   
-  save_results <- function(results,filename) {
+save_results <- function(results,filename) {
     
     mystring <- paste('delta_acc_sampling,delta0,std0,num_experiments,',
                       'how_many_dsets,sample_size,signRankPower,signRankPValue,hier_left_95,hier_rope_95,hier_right95,',

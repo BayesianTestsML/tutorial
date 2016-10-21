@@ -27,8 +27,9 @@ logPredictive <- function  (fittedModel,testX, rho){
      currentSigma = fittedModel$stanResults$sigma[currentSample,currentDset]
      covarMatrix <- buildCovarMatrix()
      postLogPredictive[currentDset] <- postLogPredictive[currentDset] + log (dmvnorm( x=testX[currentDset,], mean=currentMu,sigma = covarMatrix) )
-     if (is.infinite(postLogPredictive[currentDset]))
+     if (is.infinite (dmvnorm( x=testX[currentDset,], mean=currentMu,sigma = covarMatrix))) {
        browser()
+     }
    } 
   }
   postLogPredictive <- postLogPredictive / samples
