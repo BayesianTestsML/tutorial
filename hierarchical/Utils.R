@@ -77,7 +77,7 @@ getActualTrainDeltaI <- function (actuals, trainSettings){
 }
 
 
-plotPosterior <- function  (hierPosterior, hierPosteriorSens, class1, class2) {
+plotPosterior <- function  (hierPosterior, hierPosteriorSens, class1=99, class2=99) {
   
   postSamples <- length(hierPosterior$stanResults$delta0)
   sampleDelta <- vector (length = postSamples)
@@ -108,14 +108,82 @@ plotPosterior <- function  (hierPosterior, hierPosteriorSens, class1, class2) {
     }
   }
   
-  d1 <- density(deltaShr)
-  d2 <- density(sampleDelta)
-  d3<- density(sampleDeltaSens)
+  d1 <- density(deltaShr, from = 2*min(deltaShr), to=2*max(deltaShr), n = 512 )
+  d2 <- density(sampleDelta, from = 2*min(deltaShr), to=2*max(deltaShr), n = 512 )
+  d3<- density(sampleDeltaSens, from = 2*min(deltaShr), to=2*max(deltaShr), n = 512  )
   
   filename <- paste('plotPost',class1,class2,'.pdf',sep = '')
   plot(d1, col=1, xlim = c(-.1,.1))
   lines(d2,col=2)
   lines(d3,col=3)
-  legend(0.02,30,legend=c('shr','hier','hierSens'), lty=c(1,1,1),col=c(1,2,3))
-  dev.off()
+  legend(0.02,10,legend=c('shr','hier','hierSens'), lty=c(1,1,1),col=c(1,2,3))
+# dev.off()
+}
+
+#computes the Kl div between the posterior and the shrinkage estimates
+KLPostShrinkage <- function (fittedModel,shrinkageEstimates){
+  library('flexmix')
+  #from the posterior t or the posterior gaussian 
+  postSamples <- length(fittedModel$stanResults$delta0)
+  sampledDeltas <- vector (length = postSamples)
+  
+  std <- fittedModel$stanResults$std0
+  mu  <- fittedModel$stanResults$delta0
+  
+ 
+  #if the model is Student
+  if (!is.null(fittedModel$nu)){
+    nu  <- fittedModel$stanResults$nu
+    for (r in 1:postSamples){
+      sampledDeltas[r] <- 1000
+      while (abs(sampledDeltas[r]) > 1) {
+        sampledDeltas[r]   <- (rt (10, nu[r]) * std[r] + mu[r]) * fittedModel$stdX
+      }
+    } 
+  }
+  #otherwise gaussian sampling
+  else{
+    for (r in 1:postSamples){
+      sampledDeltas[r] <- 1000
+      while (abs(sampledDeltas[r]) > 1) {
+        sampledDeltas[r]   <- rnorm (1, sd= std[r], mean= mu[r]) * fittedModel$stdX
+      }
+    }
+  }
+  d1 <- density(shrinkageEstimates, from = 2*min(shrinkageEstimates), to=2*max(shrinkageEstimates), n = 512 )
+  d2 <- density(sampledDeltas, from = 2*min(shrinkageEstimates), to=2*max(shrinkageEstimates), n = 512 )
+  estimatedKL <- KLdiv(cbind(shrink=d1$y,fitted=d2$y))
+  return(estimatedKL)
+}
+
+#to be run after sensitivituy analysis.
+#it loads all the results in the Rdata files, produces plot of posterior and summary table of
+#results
+compTable <- function(){
+  suffix <- c('12','13','14','15','23','24','25','34','35','45')
+  
+  for (i in 1:length(suffix)){
+    # fileName <- paste('sensitivityNormalStudent',suffix[i],'.Rdata',sep='')
+    # fileName <- paste('sensitivityStudentAlphaBeta',suffix[i],'.Rdata',sep='')
+    fileName <- paste('Rdata/sensitivityStudent',suffix[i],'.Rdata',sep='')
+    load(file = fileName)
+    currentDataFrame <-
+      as.data.frame(cbind(hierPosterior$nextDelta, hierPosteriorGauss$nextDelta, hierPosteriorKru$nextDelta))
+    plotPosterior(hierPosterior, hierPosteriorSens, suffix[i])
+    #     currentDataFrame <-
+    #       as.data.frame(cbind(halfPosteriorGauss$nextDelta, halfPosteriorJua$nextDelta,halfPosterior$nextDelta,
+    #                           halfPosteriorKru$nextDelta))
+    #     logPredictive <- c (sum(halfPosteriorGauss$logPredictiveEachDset),sum(halfPosteriorJua$logPredictiveEachDset),
+    #                         sum(halfPosterior$logPredictiveEachDset), sum(halfPosteriorKru$logPredictiveEachDset))
+    #     currentDataFrame <- rbind(logPredictive,currentDataFrame)
+    if (i==1)
+      dataFrame <- currentDataFrame
+    else
+      dataFrame <- rbind(dataFrame,currentDataFrame)
+  }
+  # colnames (dataFrame) <- c('gauss','jua','gc','kru')
+  colnames (dataFrame) <- c('hier','hierSens')
+  df <- as.matrix(dataFrame)
+  # write.table(df, file='table.csv', sep=',')
+  write.table(df, file='tableAlphaBeta.csv', sep=',')
 }

@@ -13,6 +13,7 @@ sensitivityNormalStudent <- function (class1, class2){
   options(mc.cores = parallel::detectCores())
   source ("hierarchical_test.R")
   source ("logPredictive.R")
+  source ("Utils.R")
   
   #preliminaries
   stdUpperBound <- 1000
@@ -48,22 +49,41 @@ sensitivityNormalStudent <- function (class1, class2){
     x[dsetIdx,]  <- t (tmp)
   }
   
+  chains <- 4
+  
+    
+  
   #DEBUG: LET'S COMMENT OUT ALL THE OTHER VERSION OF THE HIER MODEL  
-  #   simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
-  #   hierPosteriorKru <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentKruschke",chains)
-  #   
-  #   simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
-  #   hierPosteriorJua <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"studentJuanez",chains)
+  simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
+  hierPosteriorKru <- hierarchical.test (x=x,rho=rho,samplingType = "studentKruschke",rope_min = rope_min,
+                                         rope_max = rope_max,std_upper_bound = stdUpperBound,chains = chains,sample_file = simulationID)
   
-  # simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
-  # hierPosteriorGauss <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,stdUpperBound,"gaussian",chains)
+  simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
+  hierPosteriorJua <- hierarchical.test (x=x,rho=rho,samplingType = "studentJuanez",rope_min = rope_min,
+                                         rope_max = rope_max,std_upper_bound = stdUpperBound,chains = chains,sample_file = simulationID)
   
-  simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
-  hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student")
+  simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
+  hierPosteriorGauss <- hierarchical.test (x=x,rho=rho,sample_file = simulationID,std_upper_bound = stdUpperBound,samplingType = "gaussian",chains=chains)
+  
+#   simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
+#   hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student")
   
   simulationID <- paste('class',class1,'class',class2,"GCsens",sep ='')
   alphaBeta = list('lowerAlpha' =0.5,'upperAlpha'= 3,'lowerBeta' = 0.005,'upperBeta' = 0.05)
-  hierPosteriorSens <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student", alphaBeta = alphaBeta)
+  hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student", alphaBeta = alphaBeta,chains=chains)
+  
+  #for some reasons kl computation is not perfectlt repeateable
+  KLHierShrinkage<- vector (length = 10)
+  KLJuaShrinkage <- vector (length = 10)
+  KLKruShrinkage <- vector (length = 10)
+  KLGaussShrinkage <- vector (length = 10)
+    for (klIter in 1:10){
+  KLHierShrinkage[klIter] <- KLPostShrinkage (hierPosterior,hierPosterior$delta_each_dset)[1,2]
+  KLJuaShrinkage[klIter] <- KLPostShrinkage (hierPosteriorJua,hierPosteriorJua$delta_each_dset)[1,2]
+  KLKruShrinkage[klIter] <- KLPostShrinkage (hierPosteriorKru,hierPosteriorKru$delta_each_dset)[1,2]
+  KLGaussShrinkage[klIter] <- KLPostShrinkage (hierPosteriorGauss,hierPosteriorGauss$delta_each_dset)[1,2]
+    }
+  
   
   
   #computation of marginal likelihood on half the data.  
@@ -105,9 +125,9 @@ sensitivityNormalStudent <- function (class1, class2){
   #   bayesFactor$Jua <- exp (logPredictiveValues$Gc - logPredictiveValues$Jua)
   #   bayesFactor$Gauss <- exp (logPredictiveValues$Gc - logPredictiveValues$Gauss)
   
-  fileName <- paste('Rdata/sensitivityStudentAlphaBeta',class1,class2,'.Rdata', sep='')
+  fileName <- paste('Rdata/sensitivityStudent',class1,class2,'.Rdata', sep='')
   # save (halfPosteriorKru, halfPosteriorJua, halfPosterior, halfPosteriorGauss, bayesFactor, hierPosteriorGauss, hierPosterior, hierPosteriorJua, hierPosteriorKru, file = fileName)  
-  save (hierPosterior, hierPosteriorSens,file = fileName)  
+  save (hierPosterior, hierPosteriorKru, hierPosteriorJua, hierPosteriorGauss, KLHierShrinkage,KLGaussShrinkage,KLKruShrinkage, KLJuaShrinkage, file = fileName)  
   
   
 }

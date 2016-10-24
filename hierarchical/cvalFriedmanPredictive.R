@@ -3,8 +3,8 @@ cvalFriedmanPredictive <- function(reps=50) {
   #(10 runs of 10 folds)
   #we jointly run all the three Friedman families. 
   #tracks the MAE of MLE and of different variants of hier models on the delta_i
-#tracks MAE on delta0 and log_loss on P(delta) belonging to left, right, rope 
-library(mlbench)
+  #tracks MAE on delta0 and log_loss on P(delta) belonging to left, right, rope 
+  library(mlbench)
   library(caret)
   source('generateFriedmanData.R')
   source('genFriedmanSettings.R')
