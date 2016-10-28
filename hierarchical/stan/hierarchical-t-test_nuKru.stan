@@ -1,4 +1,5 @@
 /*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets.
+Adopts Kruschke prior as for the degrees of freedom, Gamma(1,0.0345)
 */
 
   data {
@@ -126,8 +127,9 @@
     Stan automatically samples them: mu0 as uniform and std0 as
     uniform over its domain (std0Low,std0Hi).*/
 
-    //sampling the degrees of freedom
-    nuMinusOne ~ gamma ( gammaAlpha, gammaBeta);
+    //sampling the degrees of freedom according to Kruschke prior
+    nuMinusOne ~ gamma ( 1, 0.0345);
+    
     
     //vectorial sampling of the delta_i of each data set
     delta ~ student_t(nu, delta0, std0);

@@ -52,3 +52,15 @@ hierarchical/15-1000-student4
 *.arff
 
 *.pdf
+
+hierarchical/Untitled.R
+
+hierarchical/Rdata/compTable.R
+
+hierarchical/Rdata/plotPosterior.R
+
+hierarchical/Rdata/sensitvity.xls
+
+hierarchical/csvResults/.Rhistory
+
+hierarchical/.Rhistory

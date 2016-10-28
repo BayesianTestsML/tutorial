@@ -1,2 +1,0 @@
-load("/Users/giorgiocorani/Documents/devel/tutorialML/hierarchical/friedmanResultsHalfCval_student.Rdata")
-ls()
