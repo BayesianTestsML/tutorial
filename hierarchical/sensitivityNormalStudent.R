@@ -49,7 +49,7 @@ sensitivityNormalStudent <- function (class1, class2){
     x[dsetIdx,]  <- t (tmp)
   }
   
-  chains <- 4
+  chains <- 8
   
     
   
@@ -57,13 +57,13 @@ sensitivityNormalStudent <- function (class1, class2){
   simulationID <- paste('class',class1,'class',class2,"Kruschke",sep ='')
   hierPosteriorKru <- hierarchical.test (x=x,rho=rho,samplingType = "studentKruschke",rope_min = rope_min,
                                          rope_max = rope_max,std_upper_bound = stdUpperBound,chains = chains,sample_file = simulationID)
-  
+#   
   simulationID <- paste('class',class1,'class',class2,"Juanez",sep ='')
   hierPosteriorJua <- hierarchical.test (x=x,rho=rho,samplingType = "studentJuanez",rope_min = rope_min,
                                          rope_max = rope_max,std_upper_bound = stdUpperBound,chains = chains,sample_file = simulationID)
-  
-  simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
-  hierPosteriorGauss <- hierarchical.test (x=x,rho=rho,sample_file = simulationID,std_upper_bound = stdUpperBound,samplingType = "gaussian",chains=chains)
+#   
+#   simulationID <- paste('class',class1,'class',class2,"Gaussian",sep ='')
+#   hierPosteriorGauss <- hierarchical.test (x=x,rho=rho,sample_file = simulationID,std_upper_bound = stdUpperBound,samplingType = "gaussian",chains=chains)
   
 #   simulationID <- paste('class',class1,'class',class2,"GC",sep ='')
 #   hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student")

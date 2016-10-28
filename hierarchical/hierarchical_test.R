@@ -256,7 +256,7 @@ hierarchical.test <- function(x, sample_file, samplingType="student",
   probPositiveNextDelta  <- sampledPositiveWins/(sampledPositiveWins+sampledNegativeWins)
   probNegativeNextDelta  <- sampledNegativeWins /(sampledPositiveWins+sampledNegativeWins)
   
-  HDP <- coda::HPDinterval(coda::as.mcmc(as.vector(stanResults$delta0 * stdX)))
+HDP <- coda::HPDinterval(coda::as.mcmc(as.vector(stanResults$delta0 * stdX)))
   
   
   results = list ("delta0"=list("right"=prob_right_delta0, "left"=prob_left_delta0, "rope"=prob_rope_delta0, "positive"=prob_positive_delta0,"negative"=prob_negative_delta0,

@@ -67,13 +67,16 @@ KL <- function (fittedModel,actuals, sampling='student'){
 }
 
 getActualTrainDeltaI <- function (actuals, trainSettings){
+  actualDiff <- vector (length = nrow(trainSettings))
   for (i in 1:nrow(trainSettings)){
     idx = which ( 
       actuals$eachSetting$redundantFeats == trainSettings$redundantFeats[i] &
         actuals$eachSetting$sampleSize == trainSettings$sampleSize[i] &
         actuals$eachSetting$friedmanSd == trainSettings$friedmanSd[i])
+    
+    actualDiff[i] <- actuals$eachSetting$ldaAccuracy[idx] - actuals$eachSetting$cartAccuracy[idx] 
   }
-  actualDiff <- actuals$eachSetting$ldaAccuracy[i] - actuals$eachSetting$cartAccuracy[i] 
+  return(actualDiff)
 }
 
 
@@ -117,7 +120,7 @@ plotPosterior <- function  (hierPosterior, hierPosteriorSens, class1=99, class2=
   lines(d2,col=2)
   lines(d3,col=3)
   legend(0.02,10,legend=c('shr','hier','hierSens'), lty=c(1,1,1),col=c(1,2,3))
-# dev.off()
+  # dev.off()
 }
 
 #computes the Kl div between the posterior and the shrinkage estimates
@@ -130,14 +133,14 @@ KLPostShrinkage <- function (fittedModel,shrinkageEstimates){
   std <- fittedModel$stanResults$std0
   mu  <- fittedModel$stanResults$delta0
   
- 
+  
   #if the model is Student
   if (!is.null(fittedModel$nu)){
     nu  <- fittedModel$stanResults$nu
     for (r in 1:postSamples){
       sampledDeltas[r] <- 1000
       while (abs(sampledDeltas[r]) > 1) {
-        sampledDeltas[r]   <- (rt (10, nu[r]) * std[r] + mu[r]) * fittedModel$stdX
+        sampledDeltas[r]   <- (rt (1, nu[r]) * std[r] + mu[r]) * fittedModel$stdX
       }
     } 
   }
@@ -156,34 +159,107 @@ KLPostShrinkage <- function (fittedModel,shrinkageEstimates){
   return(estimatedKL)
 }
 
-#to be run after sensitivituy analysis.
-#it loads all the results in the Rdata files, produces plot of posterior and summary table of
-#results
-compTable <- function(){
-  suffix <- c('12','13','14','15','23','24','25','34','35','45')
+
+
+#produces boxplot and scatter plots for
+#comparing MLE and shrunken estimates
+plotShrinkageMle <- function (){
+  library(tikzDevice)
+  load("~/Documents/devel/tutorialML/hierarchical/Rdata/cvalFriedmanPredictive.Rdata")
+  tikz("bplotHierShr.tex", width= 6.5, height=4.5)
+  boxplot( hierModels[[2]]$delta_each_dset, trainData[[2]]$currentMleDiffLdaCart, 
+           xlab=c('hier','mle'), ylab="Estimate of $delta_i$")
+  dev.off()
   
-  for (i in 1:length(suffix)){
-    # fileName <- paste('sensitivityNormalStudent',suffix[i],'.Rdata',sep='')
-    # fileName <- paste('sensitivityStudentAlphaBeta',suffix[i],'.Rdata',sep='')
-    fileName <- paste('Rdata/sensitivityStudent',suffix[i],'.Rdata',sep='')
-    load(file = fileName)
-    currentDataFrame <-
-      as.data.frame(cbind(hierPosterior$nextDelta, hierPosteriorGauss$nextDelta, hierPosteriorKru$nextDelta))
-    plotPosterior(hierPosterior, hierPosteriorSens, suffix[i])
-    #     currentDataFrame <-
-    #       as.data.frame(cbind(halfPosteriorGauss$nextDelta, halfPosteriorJua$nextDelta,halfPosterior$nextDelta,
-    #                           halfPosteriorKru$nextDelta))
-    #     logPredictive <- c (sum(halfPosteriorGauss$logPredictiveEachDset),sum(halfPosteriorJua$logPredictiveEachDset),
-    #                         sum(halfPosterior$logPredictiveEachDset), sum(halfPosteriorKru$logPredictiveEachDset))
-    #     currentDataFrame <- rbind(logPredictive,currentDataFrame)
-    if (i==1)
-      dataFrame <- currentDataFrame
-    else
-      dataFrame <- rbind(dataFrame,currentDataFrame)
+  tikz("scatterHierActual.tex", width= 6.5, height=4.5)
+  plot(dset$averageTime ~ dset$AthleteName, xlab="", ylab="Execution time")
+  dev.off()
+  
+  tikz("scatterMleActual.tex", width= 6.5, height=4.5)
+  plot(dset$averageTime ~ dset$AthleteName, xlab="", ylab="Execution time")
+  dev.off()
+  
+}
+
+plotPosteriorGGplot2 <- function  (hierPosterior, hierPosteriorKru, hierPosteriorJua, suffix) {
+  # library(tikzDevice)
+  library(ggplot2)
+  postSamples <- length(hierPosterior$stanResults$delta0)
+  sampleDelta <- vector (length = postSamples)
+  std <- hierPosterior$stanResults$std0
+  mu  <- hierPosterior$stanResults$delta0
+  nu  <- hierPosterior$stanResults$nu
+  redone <- -1 * postSamples
+  redoneSens <- -1 * postSamples
+  deltaShr <- hierPosterior$delta_each_dset
+  for (r in 1:postSamples){
+    sampleDelta[r] <- 1000
+    while (abs(sampleDelta[r]) > 1) {
+      sampleDelta[r]   <- (rt (1, nu[r]) * std[r] + mu[r]) * hierPosterior$stdX
+      redone <- redone + 1
+    }
   }
-  # colnames (dataFrame) <- c('gauss','jua','gc','kru')
-  colnames (dataFrame) <- c('hier','hierSens')
-  df <- as.matrix(dataFrame)
-  # write.table(df, file='table.csv', sep=',')
-  write.table(df, file='tableAlphaBeta.csv', sep=',')
+  
+  sampleDeltaKru <- vector (length = postSamples)
+  std <- hierPosteriorKru$stanResults$std0
+  mu  <- hierPosteriorKru$stanResults$delta0
+  nu  <- hierPosteriorKru$stanResults$nu
+  redoneKru <- -1 * postSamples
+  for (r in 1:postSamples){
+    sampleDeltaKru[r] <- 1000
+    while (abs(sampleDeltaKru[r]) > 1) {
+      sampleDeltaKru[r]   <- (rt (1, nu[r]) * std[r] + mu[r]) * hierPosteriorKru$stdX
+      redoneKru <- redoneKru + 1
+    }
+  }
+  
+  sampleDeltaJua <- vector (length = postSamples)
+  std <- hierPosteriorJua$stanResults$std0
+  mu  <- hierPosteriorJua$stanResults$delta0
+  nu  <- hierPosteriorJua$stanResults$nu
+  for (r in 1:postSamples){
+    sampleDeltaJua[r] <- 1000
+    while (abs(sampleDeltaJua[r]) > 1) {
+      sampleDeltaJua[r]   <- (rt (1, nu[r]) * std[r] + mu[r]) * hierPosteriorJua$stdX
+    }
+  }
+  
+  limit<-max(abs(min(deltaShr)),abs(max(deltaShr)))
+  d1 <- density(deltaShr, from = -2*limit, to=2*limit, n = 512 )
+  d2 <- density(sampleDelta, from = -2*limit, to=2*limit, n = 512 )
+  d3 <- density(sampleDeltaKru, from = -2*limit, to=2*limit, n = 512  )
+  d4 <- density(sampleDeltaJua, from = -2*limit, to=2*limit, n = 512  )
+  
+  #save the density to file
+  stopifnot(mean(d1$x==d2$x)==1)
+  stopifnot(mean(d1$x==d3$x)==1)
+  df<- data.frame(x=d1$x,shr=d1$y,hier=d2$y,kru=d3$y,jua=d4$y) 
+  fileName <- paste('csvResults/density',suffix,'.tex',sep='')
+  write.table(df,file=fileName,sep=',',row.names = FALSE, quote = FALSE)
+  
+  
+  filename <- paste('plotPostHierKru',suffix,'.pdf',sep = '')
+  pdf(file=filename)
+  plot(d1, col='black', xlim = c(-.1,.1), main = '' )
+  lines(d2,col='blue')
+  lines(d3,col='green')
+  # lines(d3,col='red')
+  legend('topright',c('shr','hier','jua'),lty=c(1,1,1),
+         col=c('black','blue', 'green'))
+  #    legend('topright',c('shr','hier','kru','jua'),lty=c(1,1,1),
+  #           col=c('black','blue', 'green','red'))
+  
+  
+    
+  dev.off()
+  
+  # deltaShrNA<- c(deltaShr,rep(NA,length(sampleDelta) - length(deltaShr)))
+  # m <- data.frame(hier=sampleDelta,kru=sampleDeltaKru,shrinkage=deltaShrNA)
+  # dfs <- stack(m)
+  # outFile <- paste('densityPlot',suffix,'.pdf',sep='')
+  # pdf(outFile)
+  # tikz(outFile, width= 6.5, height=4.5)
+  # p <- ggplot(dfs, aes(x=values)) + geom_density(aes(group=ind, colour=ind, fill=ind), alpha=0.3) + xlim(-0.1, 0.1)
+  
+  # dev.off()
 }

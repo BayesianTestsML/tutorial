@@ -77,31 +77,32 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
     stanResults <- hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4)
     currentHierDiffLdaCart <- stanResults$delta_each_dset
     
-    #Gaussian hierarchical model.
-    stanGaussianResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "gaussian")
-    currentHierGaussDiffLdaCart <- stanGaussianResults$delta_each_dset
-    
-    #Kru prior
-    kruResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentKruschke")
-    currentHierKruDiffLdaCart <- kruResults$delta_each_dset
-    
-    #Jua prior
-    juaResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentJuanez")
-    currentHierJuaDiffLdaCart <- juaResults$delta_each_dset
+#     #Gaussian hierarchical model.
+#     stanGaussianResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "gaussian")
+#     currentHierGaussDiffLdaCart <- stanGaussianResults$delta_each_dset
+#     
+#     #Kru prior
+#     kruResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentKruschke")
+#     currentHierKruDiffLdaCart <- kruResults$delta_each_dset
+#     
+#     #Jua prior
+#     juaResults <-  hierarchical.test(x = crossValResults, rho = 1/nFolds, sample_file = stanFileName, chains=4, samplingType = "studentJuanez")
+#     currentHierJuaDiffLdaCart <- juaResults$delta_each_dset
     
     #we exploit the fact that both vectors are initially filled with FALSE
     firstAvailable <- min (which (mleDiffLdaCart == FALSE))
     mleDiffLdaCart  [ firstAvailable : (firstAvailable + length(currentMleDiffLdaCart) -1 ) ] <- currentMleDiffLdaCart
     hierDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierDiffLdaCart) -1) ] <- currentHierDiffLdaCart
-    gaussDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierGaussDiffLdaCart) -1) ] <- currentHierGaussDiffLdaCart
-    kruDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierKruDiffLdaCart) -1) ] <- currentHierKruDiffLdaCart
-    juaDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierJuaDiffLdaCart) -1) ] <- currentHierJuaDiffLdaCart
+#     gaussDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierGaussDiffLdaCart) -1) ] <- currentHierGaussDiffLdaCart
+#     kruDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierKruDiffLdaCart) -1) ] <- currentHierKruDiffLdaCart
+#     juaDiffLdaCart [ firstAvailable : (firstAvailable + length(currentHierJuaDiffLdaCart) -1) ] <- currentHierJuaDiffLdaCart
     
   }
   
   #at this points we save the result to file
   csvFilename <- paste('csvResults/cvalAccFriedman',friedmanType,".csv",sep='')
-  results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart,gaussDiffLdaCart,kruDiffLdaCart,juaDiffLdaCart)
+  # results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart,gaussDiffLdaCart,kruDiffLdaCart,juaDiffLdaCart)
+  results <- data.frame(redundantFeats, sampleSize, friedmanSd, mleDiffLdaCart, hierDiffLdaCart)
   write.matrix(results,file=csvFilename, sep=",")
   
 }

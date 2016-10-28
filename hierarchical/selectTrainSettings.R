@@ -10,7 +10,6 @@ selectTrainSettings <- function (friedmanTypeVec){
   stopifnot(length(idx1)==length(idx2))
   stopifnot(length(idx3)==length(idx2))
   reducedLength= round (2/3 * length(idx1))
-  #reducedLength= round (1/20 * length(idx1))
   
   idx <- c ( idx1[1:reducedLength], idx2[1:reducedLength], idx3[1:reducedLength])
   return(idx)

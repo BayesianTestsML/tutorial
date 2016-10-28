@@ -1,4 +1,4 @@
-genFriedmanSettings <- function (friedmanType=1){
+genFriedmanSettings <- function (friedmanType=1) {
   
   #generate epxerimental settings for Friedman family:
   #levels of sample size, std dev, redundant features and the discretization threshold.

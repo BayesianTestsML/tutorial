@@ -68,3 +68,9 @@ hierarchical/.Rhistory
 *.StanOut
 
 hierarchical/svnCheckout.txt
+
+*.tex
+
+hierarchical/Rdata/.Rhistory
+
+hierarchical/Rdata/.Rapp.history
