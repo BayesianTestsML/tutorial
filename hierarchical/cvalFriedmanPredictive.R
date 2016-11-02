@@ -43,7 +43,7 @@ cvalFriedmanPredictive <- function(reps=50) {
   control <- trainControl(method = "repeatedcv", number=nFolds, repeats=nRuns)
   
   for (currentRep in 1:reps){
-  set.seed(currentRep)
+    set.seed(currentRep)
     cat('Repetition:', currentRep,'/',reps,'\n')
     trainIdx <- selectTrainSettings(friedmanTypeVec)
     crossValResults <-  matrix(nrow=length(trainIdx), ncol = nRuns * nFolds)
@@ -105,10 +105,10 @@ cvalFriedmanPredictive <- function(reps=50) {
     
     #save tmp results
     tmpFilename <- paste('Rdata/cvalFriedmanPredictiveTMP',currentRep,'.Rdata',sep = '')
-#     save (trainData, gaussModels, hierModels, kruModels, 
-#           mleMaeTrainDeltaI, hierMaeTrainDeltaI, gaussMaeTrainDeltaI, kruMaeTrainDeltaI, 
-#           hierMaeDelta0, gaussMaeDelta0, kruMaeDelta0, hierKLDeltaI, gaussKLDeltaI, 
-#           kruKLDeltaI, file = tmpFilename)  
+    #     save (trainData, gaussModels, hierModels, kruModels, 
+    #           mleMaeTrainDeltaI, hierMaeTrainDeltaI, gaussMaeTrainDeltaI, kruMaeTrainDeltaI, 
+    #           hierMaeDelta0, gaussMaeDelta0, kruMaeDelta0, hierKLDeltaI, gaussKLDeltaI, 
+    #           kruKLDeltaI, file = tmpFilename)  
     
     save (trainData, hierModels, mleMaeTrainDeltaI, hierMaeTrainDeltaI,
           hierMaeDelta0, hierKLDeltaI, file = tmpFilename)  
@@ -120,7 +120,7 @@ cvalFriedmanPredictive <- function(reps=50) {
     hierMaeTrainDeltaI=hierMaeTrainDeltaI
     # gaussMaeTrainDeltaI=gaussMaeTrainDeltaI,
     # kruMaeTrainDeltaI=kruMaeTrainDeltaI
-    )
+  )
   
   # KLDelta <- list(hierKLDeltaI=hierKLDeltaI,gaussKLDeltaI=gaussKLDeltaI,kruKLDeltaI=kruKLDeltaI)
   # maeDelta0 <- list(hierMaeDelta0=hierMaeDelta0, gaussMaeDelta0=gaussMaeDelta0, kruMaeDelta0=kruMaeDelta0)

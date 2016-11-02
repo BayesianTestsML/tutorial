@@ -243,7 +243,7 @@ plotPosteriorGGplot2 <- function  (hierPosterior, hierPosteriorKru, hierPosterio
   plot(d1, col='black', xlim = c(-.1,.1), main = '' )
   lines(d2,col='blue')
   lines(d3,col='green')
-  # lines(d3,col='red')
+# lines(d3,col='red')
   legend('topright',c('shr','hier','jua'),lty=c(1,1,1),
          col=c('black','blue', 'green'))
   #    legend('topright',c('shr','hier','kru','jua'),lty=c(1,1,1),
