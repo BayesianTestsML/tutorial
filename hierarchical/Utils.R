@@ -1,5 +1,23 @@
 #store multiple useful functions: getActuals, KL
 
+#computes MSEshr and MSEmle for simulation with hierarchical models, 
+#assuming data to be laready loaded
+computeMSE <- function(){
+  reps <- length(hierModels)
+  mseShr <- vector(length = reps)
+  mseMle <- vector(length = reps)
+  for (i in 1:reps){
+    actual <- trainData[[i]]$actualTrainDeltaI
+    mle <- trainData[[i]]$currentMleDiffLdaCart
+    shrinkage <- hierModels[[i]]$delta_each_dset
+    mseMle[i] <- mean ( (actual - mle)^2 )
+    mseShr[i] <- mean ( (actual - shrinkage)^2 )
+  }
+  df <- data.frame('mseMle'=mseMle,'mseShr'=mseShr)
+  write.table(df,sep=',',col.names = TRUE, row.names = FALSE, file = 'mse.tex')
+}
+
+
 getActuals <- function (){
   
   actualFileName <- 'csvResults/actualAccFriedman1.csv'
@@ -123,6 +141,52 @@ plotPosterior <- function  (hierPosterior, hierPosteriorSens, class1=99, class2=
   # dev.off()
 }
 
+#this function parses the list of hierarchical models and return relevant facts about the estimated probabilities.
+postEstimatedDelta <- function (hierModels){
+  #gets a list of hierarchical models and estimates via sampling the probability of the next delta being left, rope and right.
+  reps <- length(hierModels)
+  EstimPLeft <- vector (length = reps)
+  EstimPRope <- vector (length = reps)
+  EstimPRight <- vector (length = reps)
+  EstimPLeftBias <- vector (length = reps)
+  EstimPRopeBias <- vector (length = reps)
+  EstimPRightBias <- vector (length = reps)
+  
+  postSamples <- length(hierModels[[1]]$stanResults$delta0)
+  sampledDeltas <- vector (length = postSamples)
+  
+  for (i in 1:reps){
+    fittedModel <- hierModels[[i]]
+    std <- fittedModel$stanResults$std0
+    mu  <- fittedModel$stanResults$delta0
+    nu  <- fittedModel$stanResults$nu
+    for (r in 1:postSamples){
+      sampledDeltas[r] <- 1000
+      while (abs(sampledDeltas[r]) > 1) {
+        sampledDeltas[r]   <- (rt (1, nu[r]) * std[r] + mu[r]) * fittedModel$stdX
+      }
+    } 
+    #probabilities of the sampled deltas to be left rigth rope
+    EstimPLeft[i] <- mean (sampledDeltas < -0.01)
+    EstimPRight[i] <- mean (sampledDeltas > 0.01)
+    EstimPRope[i] <- mean (sampledDeltas < 0.01 & sampledDeltas > -0.01)
+    EstimPLeftBias[i] <- hierModels[[i]]$nextDelta$left
+    EstimPRopeBias[i] <- hierModels[[i]]$nextDelta$rope
+    EstimPRightBias[i] <- hierModels[[i]]$nextDelta$right
+    
+  }
+  actuals <- getActuals()
+  #probability of delta belonging to left, rope and right
+  estimatedDelta <- data.frame('EstimPLeft'=EstimPLeft, 'EstimPRight'= EstimPRight, 'EstimPRope' = EstimPRope)
+  #probability that we return as inference
+  estimatedDeltaBias <- data.frame('pLeft'=EstimPLeftBias, 'pRight'= EstimPRightBias, 'pRope' = EstimPRopeBias)
+  
+  return (list('actuals'=actuals, 'estimatedDelta'=estimatedDelta, 'estimatedDeltaBias'=estimatedDeltaBias))
+}
+
+
+
+
 #computes the Kl div between the posterior and the shrinkage estimates
 KLPostShrinkage <- function (fittedModel,shrinkageEstimates){
   library('flexmix')
@@ -243,14 +307,14 @@ plotPosteriorGGplot2 <- function  (hierPosterior, hierPosteriorKru, hierPosterio
   plot(d1, col='black', xlim = c(-.1,.1), main = '' )
   lines(d2,col='blue')
   lines(d3,col='green')
-# lines(d3,col='red')
+  # lines(d3,col='red')
   legend('topright',c('shr','hier','jua'),lty=c(1,1,1),
          col=c('black','blue', 'green'))
   #    legend('topright',c('shr','hier','kru','jua'),lty=c(1,1,1),
   #           col=c('black','blue', 'green','red'))
   
   
-    
+  
   dev.off()
   
   # deltaShrNA<- c(deltaShr,rep(NA,length(sampleDelta) - length(deltaShr)))

@@ -3,9 +3,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
   #(10 runs of 10 folds)
   #friedmanType is the friedman function (1,2,3) while reps is the number of repetitions
   #of the process data generation/cross-validation.
-  #if friedmanType=4, we jointly run the first and the second family.
   #the family contains right onw 18 data sets.
-  #eventually returns the MLE estimates and the shrinked estimates in each repetiti ons
   library(mlbench)
   library(caret)
   source('generateFriedmanData.R')

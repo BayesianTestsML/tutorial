@@ -88,6 +88,7 @@ analyze_uci_with_rope <- function() {
   counter <- 1
   for (i in 1: (how_many_classifiers-1) ) {
     for (j in (i+1) : how_many_classifiers){
+      chains <-4
       show(c(i,j))
       
       classifierI[counter] <- i
@@ -131,7 +132,9 @@ analyze_uci_with_rope <- function() {
       startTime<-Sys.time()
       simulationID <- paste(as.character(i*10 + j),as.character(std_upper_bound),samplingType,".dat",sep = "-")
       
-      hierarchicalResults[[counter]] <- hierarchical.test (x,rho,rope_min,rope_max,simulationID,std_upper_bound,samplingType,chains)
+      hierarchicalResults[[counter]] <- hierarchical.test (x=x, rope_min=rope_min, rope_max=rope_max, sample_file=simulationID,
+                                                           chains = chains,
+                                                           samplingType = 'student')
       
       stopTime<-Sys.time()
       show(startTime-stopTime)

@@ -171,7 +171,9 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
       var.diff[k] <- var(delta_acc_each_dset)
       
       stan.initial.time <- proc.time()
-      stan_prob <- hierarchical.test(t(Diff_ab),rho,rope_min,rope_max,file_str,std_upper_bound,'student')
+      stan_prob <- hierarchical.test(x=t(Diff_ab),
+                                     rope_min = rope_min,rope_max = rope_max,
+                                     sample_file =  file_str,samplingType =  'student')
       stan_elapsed_time[k]<-(proc.time()[3]-stan.initial.time[3]);
       show(stan_elapsed_time[k])
       prob_left_hier_delta0[k]  <- stan_prob$delta0$left

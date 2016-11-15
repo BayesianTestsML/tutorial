@@ -29,7 +29,7 @@ actualFriedmanAccuracy <- function(friedmanType=1, reps=500) {
     knnAccuracy  <- vector(length = reps)
     
     for (currentRep in 1:reps){
-      #cat(currentRep,'\n')
+    cat(currentRep,'\n')
       #the following functions should generate the data according to the given settings and discretize according to
       #the supplied threshold
       trainingData <- generateFriedmanData(friedmanType,settings[currentSetting,])
