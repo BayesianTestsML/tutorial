@@ -1,5 +1,4 @@
-multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,simulation_ID=1, delta_acc_sampling='cauchy',
-                                flag500=FALSE) {
+multiple_dsets_rope <- function(delta0=0,std0=0.01,how_many_dsets=50,reps=250,sample_sizes=500,simulation_ID=1, delta_acc_sampling='cauchy') {
   
   library(MASS)
   library(matrixStats)
@@ -14,61 +13,39 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
     stop('wrong delta_acc_sampling')
   }
   
-  
-  
-  #check arguments
-  std_upper_bound=1000
-  
-  
-  showPost <- 0
-  trackMeans<-0
+  #set the seed for reproducible results
+  set.seed(simulation_ID)
   
   # this control the variance of the simulation.
-  # one classifier has accuracy theta_star, the other theta_star=delta_acc.
+  # the first classifier has accuracy theta_star, the second theta_star+delta_acc.
   # with theta_star=1, we have zero variance.
-  # witht theta_star=0.5, we have maximum variance
+  # with theta_star=0.5, we have maximum variance
   theta_star <- 0.9
   n_folds <- 10
   n_runs <- 10
   
-  
-  if (trackMeans==1){
-    reps <- 1 
-  }
-  
-  file_str0 <- paste('resultsDelta0',delta0,'Std0',std0,'_','sample_sizes',sample_sizes,'_',delta_acc_sampling,'_simulID_',simulation_ID,".dat",sep = "")
+  file_str0 <- paste('csvResults/Delta0',delta0,'Std0',std0,'_','sample_sizes',sample_sizes,'_',delta_acc_sampling,'_simulID_',simulation_ID,sep = "")
   filename <- paste(file_str0,'.csv',sep = "")
   log_filename <- paste('log_',file_str0,'.csv',sep = "")
   
-  rope_min <- -0.01;
-  rope_max <- 0.01;
-  #set the seed for reproducible results
-  set.seed(simulation_ID)
-  
-  
+  rope_min <- -0.01
+  rope_max <- 0.01
   
   
   #point estimator of the correlation
   rho <- 1/n_folds;
   sign_rank_p_value <- matrix(0,reps)
-  prob_left_hier_delta0 <- matrix(0,reps)
-  prob_rope_hier_delta0 <- matrix(0,reps)
-  prob_right_hier_delta0 <- matrix(0,reps)
-  rmse_indep_bay_ttest <- matrix(0,reps)
-  rmse_hier_bay_ttest <- matrix(0,reps)
-  maeMle_Mle500 <- matrix(0,reps)
-  maeHier_Mle500 <-   matrix(0,reps)
-  maeDelta_Mle500 <- matrix(0,reps)
-  rhoEstimated <- matrix(0,reps)
-  stan_elapsed_time <- matrix(0,reps)
-  mean.diff<- matrix(0,reps)
-  var.diff<- matrix(0,reps)
+  probLeftNextDelta <- matrix(0,reps)
+  probRopeNextDelta <- matrix(0,reps)
+  probRightNextDelta <- matrix(0,reps)
+  rmseMleDelta_i <- matrix(0,reps)
+  rmseHierDelta_i <- matrix(0,reps)
   settings <- list() 
   results <- list() 
   counter <- 1
-  klGauss <- matrix(0,reps)
-  klKru <- matrix(0,reps)
   
+  #originally the function was supposed to handle multiple value of parameters.
+  #in reality we always used on a cluster running a single setting.
   for (k in 1:length(how_many_dsets)) {
     for (i in 1:length(sample_sizes)) {
       settings[[counter]] <- list('dsets'=how_many_dsets[k],'sample_size'=sample_sizes[i]); ##ok<AGROW>
@@ -85,7 +62,6 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
     #to be appended to various created files
     file_str <- paste('delta0',delta0,'Std0',std0,'_dsets_',current_many_dsets,'_delta_acc_',delta_acc_sampling,'_samples_sizes_',sample_sizes,'simulationID_',simulation_ID,sep="");
     
-    initial.time <- proc.time()
     
     for (k in 1:reps) {
       
@@ -115,157 +91,96 @@ multiple_dsets_rope <- function(delta0,std0,how_many_dsets,sample_sizes,reps,sim
         delta_acc_each_dset[1:count1] <- rnorm(count1, mean = mean1, sd = std); 
         delta_acc_each_dset[(count1+1):(count1+count2)] <- rnorm(count2, mean = mean2, sd = std); 
       }
-      if (flag500==TRUE){
-        delta_acc_cv500 <- vector(length = current_many_dsets)
-      }
-      
-      indep_p_left_each_dset=matrix(1,current_many_dsets);
-      indep_p_rope_each_dset=matrix(1,current_many_dsets);
-      indep_p_right_each_dset=matrix(1,current_many_dsets);
       
       sample_diff_acc_a_b_each_dset <- matrix(0,current_many_dsets);
-      
-      
-      Diff_ab <- matrix(0,n_runs*n_folds,current_many_dsets);
+      diffMatrix <- matrix(0,n_runs*n_folds,current_many_dsets);
       
       for (i in 1:current_many_dsets){
         
         current_delta_acc <- delta_acc_each_dset[i];
         cv_results <- list('delta'=rep(0,n_runs*n_folds))
-        if (flag500==FALSE){
-          while (var(cv_results$delta)==0 && mean(cv_results$delta)==0) { 
-            cv_results <- cv_competing_nbc(n_runs,n_folds,current_dset_size,current_delta_acc,theta_star);
-            diff_a_b <- cv_results$delta;
-          }
+        while (var(cv_results$delta)==0 && mean(cv_results$delta)==0) { 
+          cv_results <- cv_competing_nbc(n_runs,n_folds,current_dset_size,current_delta_acc,theta_star);
+          currentDiff <- cv_results$delta;
         }
-        if (flag500==TRUE){
-          for (cvIter in 1:500){
-            cv_results <- cv_competing_nbc(n_runs,n_folds,current_dset_size,current_delta_acc,theta_star,seed=cvIter)
-            delta_acc_cv500[cvIter] <- mean(cv_results$delta)
-#             cat('iter:',cvIter, '\n')
-#             cat(mean(cv_results$delta), sd(cv_results$delta),'\n')
-          }
-          cv_results <- list('delta'=rep(0,n_runs*n_folds));
-          while (var(cv_results$delta)==0 && mean(cv_results$delta)==0) { 
-            cv_results <- cv_competing_nbc(n_runs,n_folds,current_dset_size,current_delta_acc,theta_star)
-            diff_a_b <- cv_results$delta
-          }
-        }
-        
-        sample_diff_acc_a_b_each_dset[i] <- mean(diff_a_b);
-        
-        
-        #equivalent to p-value one-sided right tailed
-        indep_p_each_dset <- ttest_Bayesian(diff_a_b,rho,rope_min,rope_max);
-        Diff_ab[,i]=diff_a_b;
-        indep_p_left_each_dset[i] <- indep_p_each_dset$left;
-        indep_p_rope_each_dset[i] <- indep_p_each_dset$rope;
-        indep_p_right_each_dset[i] <- indep_p_each_dset$right;
-        
+        sample_diff_acc_a_b_each_dset[i] <- mean(currentDiff);
+        diffMatrix[,i]=currentDiff;
       }
       
       #frequentist Wilcoxon signed rank
       sign_rank_p_value[k]  <-  wilcox.test(sample_diff_acc_a_b_each_dset,alternative = "two.sided",exact=FALSE)$p.value;
-      # sign_rank_p_value[k]  <-  t.test(sample_diff_acc_a_b_each_dset)$p.value;
-      mean.diff[k] <- mean(delta_acc_each_dset)
-      var.diff[k] <- var(delta_acc_each_dset)
       
-      stan.initial.time <- proc.time()
-      stan_prob <- hierarchical.test(x=t(Diff_ab),
-                                     rope_min = rope_min,rope_max = rope_max,
-                                     sample_file =  file_str,samplingType =  'student')
-      stan_elapsed_time[k]<-(proc.time()[3]-stan.initial.time[3]);
-      show(stan_elapsed_time[k])
-      prob_left_hier_delta0[k]  <- stan_prob$delta0$left
-      prob_rope_hier_delta0[k]  <- stan_prob$delta0$rope
-      prob_right_hier_delta0[k] <- stan_prob$delta0$right
+      #running Stan
+      #we adopt here a reduced number of chains because artificial data are smooth and convergence is easy
+      stanModel <- hierarchical.test(x=t(diffMatrix), sample_file =  file_str,samplingType =  'student',
+                                     chains=4)
       
-      #logLoss, pActual, etc commented out: it refers to the inference on Delta0      
-      #       for (aa in 1:current_many_dsets){
-      #         if (delta_acc_each_dset[aa]<rope_min) {
-      #           logLossIndep[k] <- logLossIndep[k] - log(indep_p_left_each_dset[aa])
-      #           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$left[aa])
-      #           pActualHier[k] <-pActualHier[k] + stan_prob$delta$left[aa]
-      #           pActualIndep[k] <-pActualIndep[k] + indep_p_left_each_dset[aa]
-      #         } else if (delta_acc_each_dset[aa]>rope_max) {
-      #           logLossIndep[k] <- logLossIndep[k] - log(indep_p_right_each_dset[aa])
-      #           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$right[aa])
-      #           pActualHier[k] <-pActualHier[k] + stan_prob$delta$right[aa]
-      #           pActualIndep[k] <-pActualIndep[k] + indep_p_right_each_dset[aa]
-      #         } else {
-      #           logLossIndep[k] <- logLossIndep[k] - log(indep_p_rope_each_dset[aa])
-      #           logLossHier[k] <- logLossHier[k] - log(stan_prob$delta$rope[aa])
-      #           pActualHier[k] <-pActualHier[k] + stan_prob$delta$rope[aa] 
-      #           pActualIndep[k] <-pActualIndep[k] + indep_p_rope_each_dset[aa]
-      #         }
-      #       }
-      #       logLossIndep[k] <- logLossIndep[k]/current_many_dsets
-      #       logLossHier[k] <- logLossHier[k]/current_many_dsets
-      #       pActualIndep[k] <-pActualIndep[k]/current_many_dsets
-      #       pActualHier[k] <-pActualHier[k]/current_many_dsets
+      #probability of left, right and rope being the most probable outcome on the next data set.
+      probLeftNextDelta[k]  <- stanModel$nextDelta$left
+      probRopeNextDelta[k]  <- stanModel$nextDelta$rope
+      probRightNextDelta[k] <- stanModel$nextDelta$right
       
-      #means a posteriori equals the maxLik mean
-      maxLikMeans <- colMeans(Diff_ab)
-      rmse_indep_bay_ttest[k] <- sqrt(mean( (delta_acc_each_dset- maxLikMeans)^2 ))
-      rmse_hier_bay_ttest[k] <- sqrt(mean( (delta_acc_each_dset- stan_prob$delta_each_dset)^2 ))
       
-      maeMle_Mle500[k] <- (mean( abs(delta_acc_cv500- maxLikMeans) ))
-      maeHier_Mle500[k] <- (mean( abs(delta_acc_cv500- stan_prob$delta_each_dset) ))
-      maeDelta_Mle500[k] <- (mean( abs(delta_acc_cv500 - delta_acc_each_dset ) ))
+      #comparing MLE and hierarchical estimates of Delta_i
+      maxLikMeans <- colMeans(diffMatrix)
+      rmseMleDelta_i[k] <- sqrt(mean( (delta_acc_each_dset- maxLikMeans)^2 ))
+      rmseHierDelta_i[k] <- sqrt(mean( (delta_acc_each_dset- stanModel$meanDeltaEachDset)^2 ))
       
-    }#close the loop on the repetitions
+    }#closes the loop on the repetitions
     
     
-    elapsed_time <- (proc.time()[3]-initial.time[3]);
-    cat('elapsed time: ', elapsed_time)
     
     results[[j]] <- list('how_many_dsets'=current_many_dsets,
                          'sample_size'=current_dset_size,
                          'delta0'=delta0,
                          'std0'=std0,
                          'sign_rank_p_value'=sign_rank_p_value,
-                         'prob_left_hier_delta0'=prob_left_hier_delta0,
-                         'prob_rope_hier_delta0'=prob_rope_hier_delta0,
-                         'prob_right_hier_delta0'=prob_right_hier_delta0,
-                         'rmse_hier_each_dset'=rmse_hier_bay_ttest,
-                         'rmse_indep_each_dset'=rmse_indep_bay_ttest,
-                         'stan_elapsed_time'=stan_elapsed_time)  
+                         'probLeftNextDelta'=probLeftNextDelta,
+                         'probRopeNextDelta'=probRopeNextDelta,
+                         'probRightNextDelta'=probRightNextDelta,
+                         'rmseHierDelta_i'=rmseHierDelta_i,
+                         'rmseMleDelta_i'=rmseMleDelta_i
+                         )  
   }
   
-save_results <- function(results,filename) {
+  save_results <- function(results,filename) {
     
     mystring <- paste('delta_acc_sampling,delta0,std0,num_experiments,',
-                      'how_many_dsets,sample_size,signRankPower,signRankPValue,hier_left_95,hier_rope_95,hier_right95,',
-                      'hier_left_90,hier_rope_90,hier_right90,median_hier_p_left,median_hier_p_rope,',
-                      'median_hier_p_right,rmse_hier,rmse_mle,StanElapsedTime',sep="");
+                      'how_many_dsets,sample_size,',
+                      'signRankPower,signRankPValue,',
+                      'hier_left_95,hier_rope_95,hier_right95,',
+                      'medianHierLeft,medianHierRope,medianHierRight,',
+                      'rmse_hier,rmse_mle',sep="")
     
-    #THESE FIELDS ARE NO LONGER TRACKED: logLossHier,logLossIndep,pActualHier,pActualIndep
     write(mystring, filename, append = FALSE)
     
     for (ii in 1:length(results)){
-      num_experiments <- length(results[[ii]]$sign_rank_p_value);
-      h1_sign_rank <- mean(results[[ii]]$sign_rank_p_value<.05);
-      h1_sign_rankPvalue <- median(results[[ii]]$sign_rank_p_value);
-      hier_left_95 <- mean(results[[ii]]$prob_left_hier_delta0>.95);
-      hier_rope_95 <- mean(results[[ii]]$prob_rope_hier_delta0>.95);
-      hier_right_95 <- mean(results[[ii]]$prob_right_hier_delta0>.95);
-      hier_left_90 <- mean(results[[ii]]$prob_left_hier_delta0>.90);
-      hier_rope_90 <- mean(results[[ii]]$prob_rope_hier_delta0>.90);
-      hier_right_90 <- mean(results[[ii]]$prob_right_hier_delta0>.90);
       
-      tmp_vector <- c(h1_sign_rank, h1_sign_rankPvalue, hier_left_95,hier_rope_95, hier_right_95,hier_left_90,hier_rope_90,hier_right_90,
-                      median(results[[ii]]$prob_left_hier_delta0),median(results[[ii]]$prob_rope_hier_delta0),median(results[[ii]]$prob_right_hier_delta0),
-                      mean(results[[ii]]$rmse_hier_each_dset),mean(results[[ii]]$rmse_indep_each_dset),
-                      mean(results[[ii]]$stan_elapsed_time));
-      mystring <- paste(delta_acc_sampling,',',results[[ii]]$delta0,',',
-                        results[[ii]]$std0,',',num_experiments,',',results[[ii]]$how_many_dsets,
-                        ',',results[[ii]]$sample_size,',',paste(tmp_vector,collapse=","));
+      tmp_vector <- c(
+                      results[[ii]]$delta0,
+                      results[[ii]]$std0,
+                      length(results[[ii]]$sign_rank_p_value),
+                      results[[ii]]$how_many_dsets,
+                      results[[ii]]$sample_size,
+                      mean(results[[ii]]$sign_rank_p_value<.05),
+                      median(results[[ii]]$sign_rank_p_value),
+                      mean(results[[ii]]$probLeftNextDelta>.95),
+                      mean(results[[ii]]$probRopeNextDelta>.95),
+                      mean(results[[ii]]$probRightNextDelta>.95),
+                      median(results[[ii]]$probLeftNextDelta),
+                      median(results[[ii]]$probRopeNextDelta),
+                      median(results[[ii]]$probRightNextDelta),
+                      mean(results[[ii]]$rmseHierDelta_i),
+                      mean(results[[ii]]$rmseMleDelta_i)
+                      )
+      
+      mystring <- paste(delta_acc_sampling,',',paste(tmp_vector,collapse=","))
       write(mystring, filename, append = TRUE)
     }
   }
   
   #save csv file
-  save_results(results, filename);
+  save_results(results, filename)
   
   #save the Rdata file
   rdata_filename <- paste(file_str0,'.Rdata',sep="");
