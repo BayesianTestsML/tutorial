@@ -1,4 +1,4 @@
-sensitivityNormalStudent <- function (class1, class2){
+hierUciAnalysis <- function (class1, class2){
   #class1 and class2 are the two classifier being compared
   #'naive Bayes','aode','hnb','j48','j48_grafted' are coded as 1,2,3,4,5 respectively
   #'e.g. to compare naive Bayes and aode: sensitivityNormalStudent(1,2)
@@ -63,9 +63,9 @@ sensitivityNormalStudent <- function (class1, class2){
   #this setup of parameters works well in most cases, providing generally better fit than 
   #a single gamma prior on nu 
   alphaBeta = list('lowerAlpha' =0.5,'upperAlpha'= 5,'lowerBeta' = .05,'upperBeta' = .15)
-  hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student", alphaBeta = alphaBeta,chains=chains)
+  hierPosterior <- hierarchical.test (x = x,sample_file = simulationID,samplingType = "student", alphaBeta = alphaBeta)
   
-  fileName <- paste('Rdata/hierModel',class1,class2,'.Rdata', sep='')
-  save (hierPosteriorNovel, file = fileName)  
+  fileName <- paste('Rdata/hierUciAnalysis',class1,class2,'.Rdata', sep='')
+  save (hierPosterior, file = fileName)  
   
 }
