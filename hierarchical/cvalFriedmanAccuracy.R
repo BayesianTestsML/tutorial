@@ -54,6 +54,7 @@ cvalFriedmanAccuracy <- function(friedmanType=1, reps=250) {
       #we also need the seed to be different between each execution
       currentSeed <- as.numeric(Sys.time())
       set.seed(currentSeed)
+      
       fit.lda <- train(data$x, data$class, method="lda", trControl=control, tuneLength = 1)
       set.seed(currentSeed)
       fit.cart <- train(data$x, data$class, method="rpart1SE", trControl=control, tuneLength = 1)

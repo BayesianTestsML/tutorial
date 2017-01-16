@@ -1,7 +1,8 @@
 hierarchical.test <- function(x, sample_file, samplingType="student", 
-                              alphaBeta = list('lowerAlpha' =1,'upperAlpha'= 2,'lowerBeta' = 0.01,'upperBeta' = 0.1),
+                              alphaBeta = list('lowerAlpha' =0.5,'upperAlpha'= 5,'lowerBeta' = 0.05,'upperBeta' = .15),
                               rho = 0.1, rope_min=-0.01, rope_max=0.01, std_upper_bound=1000, chains=8)
   
+
   #usually you want to use the default parameters of the function, providing only x and the sample_file.
   
   
