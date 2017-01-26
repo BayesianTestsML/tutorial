@@ -202,6 +202,228 @@ def signrank(x, rope, prior_strength=0.6, prior_place=ROPE, nsamples=50000,
     return pl, pe, pr
 
 
+def hierarchical(diff, rope, rho,  upperAlpha=2, lowerAlpha =1, lowerBeta = 0.01, upperBeta = 0.1,std_upper_bound=1000, verbose=False, names=('C1', 'C2') ):
+     # upperAlpha, lowerAlpha, upperBeta, lowerBeta, are the upper and lower bound for alpha and beta, which are the parameters of 
+    #the  Gamma distribution used as a prior for the degress of freedom.
+    #std_upper_bound is a constant which multiplies the sample standard deviation, to set the upper limit of the prior on the
+    #standard deviation.  Posterior inferences are insensitive to this value as this is large enough, such as 100 or 1000.
+    
+    samples=hierarchical_MC(diff, rope, rho, upperAlpha, lowerAlpha, lowerBeta, upperBeta, std_upper_bound,names )
+    winners = np.argmax(samples, axis=1)
+    pl, pe, pr = np.bincount(winners, minlength=3) / len(winners)
+    if verbose:
+        print('P({c1} > {c2}) = {pl}, P(rope) = {pe}, P({c2} > {c1}) = {pr}'.
+              format(c1=names[0], c2=names[1], pl=pl, pe=pe, pr=pr))
+    return pl, pe, pr
+
+def hierarchical_MC(diff, rope, rho,   upperAlpha=2, lowerAlpha =1, lowerBeta = 0.01, upperBeta = 0.1, std_upper_bound=1000, names=('C1', 'C2') ):
+    # upperAlpha, lowerAlpha, upperBeta, lowerBeta, are the upper and lower bound for alpha and beta, which are the parameters of 
+    #the  Gamma distribution used as a prior for the degress of freedom.
+    #std_upper_bound is a constant which multiplies the sample standard deviation, to set the upper limit of the prior on the
+    #standard deviation.  Posterior inferences are insensitive to this value as this is large enough, such as 100 or 1000.
+
+    import scipy.stats as stats
+    import pystan
+    #data rescaling, to have homogenous scale among all dsets
+    stdX = np.mean(np.std(diff,1)) #we scale all the data by the mean of the standard deviation of data sets
+    x = diff/stdX
+    rope=rope/stdX
+    
+    #to avoid numerical problems with zero variance
+    for i in range(0,len(x)):
+        if np.std(x[i,:])==0:
+            x[i,:]=x[i,:]+np.random.normal(0,np.min(1/1000000000,np.abs(np.mean(x[i,:])/100000000)))
+  
+    
+    #This is the Hierarchical model written in Stan
+    hierarchical_code = """
+    /*Hierarchical Bayesian model for the analysis of competing cross-validated classifiers on multiple data sets.
+    */
+
+      data {
+
+        real deltaLow;
+        real deltaHi;
+
+        //bounds of the sigma of the higher-level distribution
+        real std0Low; 
+        real std0Hi; 
+
+        //bounds on the domain of the sigma of each data set
+        real stdLow; 
+        real stdHi; 
+
+
+        //number of results for each data set. Typically 100 (10 runs of 10-folds cv)
+        int<lower=2> Nsamples; 
+
+        //number of data sets. 
+        int<lower=1> q; 
+
+        //difference of accuracy between the two classifier, on each fold of each data set.
+        matrix[q,Nsamples] x;
+
+        //correlation (1/(number of folds))
+        real rho; 
+
+        real upperAlpha;
+        real lowerAlpha;
+        real upperBeta;
+        real lowerBeta;
+
+         }
+
+
+      transformed data {
+
+        //vector of 1s appearing in the likelihood 
+        vector[Nsamples] H;
+
+        //vector of 0s: the mean of the mvn noise 
+        vector[Nsamples] zeroMeanVec;
+
+        /* M is the correlation matrix of the mvn noise.
+        invM is its inverse, detM its determinant */
+        matrix[Nsamples,Nsamples] invM;
+        real detM;
+
+        //The determinant of M is analytically known
+        detM <- (1+(Nsamples-1)*rho)*(1-rho)^(Nsamples-1);
+
+        //build H and invM. They do not depend on the data.
+        for (j in 1:Nsamples){
+          zeroMeanVec[j]<-0;
+          H[j]<-1;
+          for (i in 1:Nsamples){
+            if (j==i)
+              invM[j,i]<- (1 + (Nsamples-2)*rho)*pow((1-rho),Nsamples-2);
+            else
+              invM[j,i]<- -rho * pow((1-rho),Nsamples-2);
+           }
+        }
+        /*at this point invM contains the adjugate of M.
+        we  divide it by det(M) to obtain the inverse of M.*/
+        invM <-invM/detM;
+      }
+
+      parameters {
+        //mean of the  hyperprior from which we sample the delta_i
+        real<lower=deltaLow,upper=deltaHi> delta0; 
+
+        //std of the hyperprior from which we sample the delta_i
+        real<lower=std0Low,upper=std0Hi> std0;
+
+        //delta_i of each data set: vector of lenght q.
+        vector[q] delta;               
+
+        //sigma of each data set: : vector of lenght q.
+        vector<lower=stdLow,upper=stdHi>[q] sigma; 
+
+        /* the domain of (nu - 1) starts from 0
+        and can be given a gamma prior*/
+        real<lower=0> nuMinusOne; 
+
+        //parameters of the Gamma prior on nuMinusOne
+        real<lower=lowerAlpha,upper=upperAlpha> gammaAlpha;
+        real<lower=lowerBeta, upper=upperBeta> gammaBeta;
+
+      }
+
+     transformed parameters {
+        //degrees of freedom
+        real<lower=1> nu ;
+
+        /*difference between the data (x matrix) and 
+        the vector of the q means.*/
+        matrix[q,Nsamples] diff; 
+
+        vector[q] diagQuad;
+
+        /*vector of length q: 
+        1 over the variance of each data set*/
+        vector[q] oneOverSigma2; 
+
+        vector[q] logDetSigma;
+
+        vector[q] logLik;
+
+        //degrees of freedom
+        nu <- nuMinusOne + 1 ;
+
+        //1 over the variance of each data set
+        oneOverSigma2 <- rep_vector(1, q) ./ sigma;
+        oneOverSigma2 <- oneOverSigma2 ./ sigma;
+
+        /*the data (x) minus a matrix done as follows:
+        the delta vector (of lenght q) pasted side by side Nsamples times*/
+        diff <- x - rep_matrix(delta,Nsamples); 
+
+        //efficient matrix computation of the likelihood.
+        diagQuad <- diagonal (quad_form (invM,diff'));
+        logDetSigma <- 2*Nsamples*log(sigma) + log(detM) ;
+        logLik <- -0.5 * logDetSigma - 0.5*Nsamples*log(6.283);  
+        logLik <- logLik - 0.5 * oneOverSigma2 .* diagQuad;
+
+      }
+
+      model {
+        /*mu0 and std0 are not explicitly sampled here.
+        Stan automatically samples them: mu0 as uniform and std0 as
+        uniform over its domain (std0Low,std0Hi).*/
+
+        //sampling the degrees of freedom
+        nuMinusOne ~ gamma ( gammaAlpha, gammaBeta);
+
+        //vectorial sampling of the delta_i of each data set
+        delta ~ student_t(nu, delta0, std0);
+
+        //logLik is computed in the previous block 
+        increment_log_prob(sum(logLik));   
+     }
+    """
+    datatable=x
+    std_within=np.mean(np.std(datatable,1))
+
+    Nsamples = len(datatable[0])
+    q= len(datatable)
+    if q>1:
+        std_among=np.std(np.mean(datatable,1))
+    else:
+        std_among=np.mean(np.std(datatable,1))
+
+    #Hierarchical data in Stan
+    hierachical_dat = {'x': datatable,
+                   'deltaLow' : -np.max(np.abs(datatable)),
+                   'deltaHi' : np.max(np.abs(datatable)),
+                   'stdLow' : 0,
+                   'stdHi' : std_within*std_upper_bound,
+                   'std0Low' : 0,
+                   'std0Hi' : std_among*std_upper_bound,
+                   'Nsamples' : Nsamples,
+                   'q' : q,
+                   'rho' : rho,
+                   'upperAlpha' : upperAlpha,
+                   'lowerAlpha' : lowerAlpha,
+                   'upperBeta' : upperBeta,
+                   'lowerBeta' : lowerBeta}
+
+    #Call to Stan code
+    fit = pystan.stan(model_code=hierarchical_code, data=hierachical_dat,
+                      iter=1000, chains=4)
+    
+    la = fit.extract(permuted=True)  # return a dictionary of arrays
+    mu = la['delta0']
+    stdh = la['std0']
+    nu = la['nu']
+    
+    samples=np.zeros((len(mu),3), dtype=float)
+    for i in range(0,len(mu)):
+        samples[i,2]=1-stats.t.cdf(rope, nu[i], mu[i], stdh[i])
+        samples[i,0]=stats.t.cdf(-rope, nu[i], mu[i],  stdh[i])
+        samples[i,1]=1-samples[i,0]-samples[i,2]
+     
+    return samples
+
 def plot_posterior(samples, names=('C1', 'C2')):
     """
     Args:
@@ -250,9 +472,9 @@ def plot_simplex(points, names=('C1', 'C2')):
                    [vert0[0, 1], vert0[i, 1]], color='orange'))
     # vertex labels
     rcParams.update({'font.size': 16})
-    fig.gca().text(-0.08, -0.08, 'p({})'.format(names[0]))
-    fig.gca().text(0.44, np.sqrt(3) / 2 + 0.05, 'p(rope)')
-    fig.gca().text(1.00, -0.08, 'p({})'.format(names[1]))
+    fig.gca().text(-0.08, -0.08, 'p({})'.format(names[0]), color='orange')
+    fig.gca().text(0.44, np.sqrt(3) / 2 + 0.05, 'p(rope)', color='orange')
+    fig.gca().text(1.00, -0.08, 'p({})'.format(names[1]), color='orange')
 
     # project and draw points
     tripts = _project(points[:, [0, 2, 1]])
