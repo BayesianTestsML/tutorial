@@ -27,6 +27,10 @@
     //correlation (1/(number of folds))
     real rho; 
     
+    /*upper and lower bound for alpha and beta, which are the parameters of the Gamma distribution
+    used as a prior for the degress of freedom.
+    As a default we suggest: lowerAlpha=0.5; upperAlpha= 5; lowerBeta=0.05; upperBeta = .15
+    */
     real upperAlpha;
     real lowerAlpha;
     real upperBeta;
