@@ -1,5 +1,12 @@
 analyze_uci_with_rope <- function() {
-  
+  #load from file "uci_data.RData" the cross-validation results of different classifiers on different data sets.
+  #the relevant information is all included in the self-explaining list called uci_classification.
+  #It contains accuracy results referring to 10 runs of 10-folds cross-validation for each classifier on 54 data sets.
+  #The considered classifiers are ('naive Bayes','aode','hnb','j48','j48_grafted'), coded as 1,2,3,4,5.
+  #It performs all the pairwise comparisons among such classifiers, on this collection of data sets.
+  #As a result it returns the p-value of the signed rank, and the posterior probabilities computed by
+  #the hierarchical test (posterior probability of the next delta being positive/negative; of the next delta
+  #lying within rope, at the left and at the right of the rope)
   library(MASS)
   library(matrixStats)
   library(rstan)
@@ -21,10 +28,8 @@ analyze_uci_with_rope <- function() {
   }
   
   load("uci_data.RData")
-  #to have maximum reliability when comparing real classifiers
-  chains = 8 
+  chains = 4
   
-  #output parameters 
   
   #check arguments
   if (std_upper_bound<=1){
@@ -150,8 +155,6 @@ analyze_uci_with_rope <- function() {
       
       prob_positiveNextDelta[counter]  <- hierarchicalResults[[counter]]$nextDelta$positive
       prob_negativeNextDelta[counter]  <- hierarchicalResults[[counter]]$nextDelta$negative
-      #waic not useful, we do not track it
-      #waic[counter] <- hierarchicalResults[[counter]]$waic
       
       counter <- counter + 1
     }

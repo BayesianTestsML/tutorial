@@ -2,7 +2,6 @@
 
 *.csv
 
-*.Rdata
 
 *.hpp
 
@@ -52,6 +51,7 @@ hierarchical/15-1000-student4
 *.arff
 
 *.pdf
+*.Rdata
 
 hierarchical/Untitled.R
 
@@ -76,3 +76,13 @@ hierarchical/Rdata/.Rhistory
 hierarchical/Rdata/.Rapp.history
 
 *.history
+
+hierarchical/weka/weka500runs.Rdata
+
+*.Rdata
+
+hierarchical/sandbox.R
+
+hierarchical/weka/weka500runsRawResults.Rdata
+
+hierarchical/weka/weka500runsRawResults.Rdata

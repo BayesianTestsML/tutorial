@@ -1,9 +1,31 @@
 hierarchical.test <- function(x, sample_file, samplingType="student", 
                               alphaBeta = list('lowerAlpha' =0.5,'upperAlpha'= 5,'lowerBeta' = 0.05,'upperBeta' = .15),
-                              rho = 0.1, rope_min=-0.01, rope_max=0.01, std_upper_bound=1000, chains=8)
+                              rho = 0.1, rope_min=-0.01, rope_max=0.01, std_upper_bound=1000, chains=4)
   
-
-  #usually you want to use the default parameters of the function, providing only x and the sample_file.
+  #The meaning of the other parameters is as follows:
+  #x is a matrix  of results. It contains the difference of accuracy between the two classifiers, on each fold of cross validation, 
+  #for each data set. Its dimension are nrows = # of dsets, ncols = number of folds. 
+  #Hence if you ran 10-folds cross-validation on 25 data sets, the matrix should be 25 x 10.
+  #If you ran 10 runs of 10-folds cross-validation on 25 data sets, the matrix should be 25 x 100.
+  #
+  #sample_file is where Stan will store its simulation results.
+  #
+  #samplingType describes the distribution from which the \delta_i are sample. We obtained the best results with the Student distribution, 
+  #setting a prior on its degrees of freedom (\nu). This correspond to the default choice "student". 
+  #
+  #alphaBeta is a lista containing upper and lower bounds  for the values of alpha and beta, which are the parameters
+  #of the prior on the degrees of freedom (\nu): \vu ~ Gamma (alpha, beta); alpha ~ unif (lowerAlpha,upperAlpha);
+  #beta ~ unif (lowerBeta,upperBeta);
+  #
+  #rho is the correlation between the different results of cross-validation. In the literature, it is recommended to be set
+  #to rho=1/(number of folds), hence the default of 1/10
+  #
+  #rope_min and rope_max are the lower and upper bounds of the rope. Assuming the accuracy to lie between 0 and 1, the default values
+  #of rope we recommend are +- 0.01
+  #
+  #std_upper_bound is a large number to ensure that the prior on sigma has a high upper bound.
+  #
+  #chains is the number of MCMC chains to be run by Stan in parallel
   
   
 {
