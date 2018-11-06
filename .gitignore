@@ -78,10 +78,10 @@ hierarchical/Rdata/.Rapp.history
 
 hierarchical/weka/weka500runs.Rdata
 
-*.Rdata
-
 hierarchical/sandbox.R
 
 hierarchical/weka/weka500runsRawResults.Rdata
 
 hierarchical/weka/weka500runsRawResults.Rdata
+
+*.Rdata
