@@ -1,48 +1,49 @@
-BayesianSignedRank <- function(diffVector,rope_min,rope_max) {
+BayesianSignedRank <- function(diffVector, rope_min, rope_max, samples=3e4) {
   
-  library(MCMCpack)
-  
-  samples <- 30000
-  
-  #build the vector 0.5 1 1 ....... 1
-  weights <- c(0.5,rep(1,length(diffVector)))
-  
-  #add the fake first observation in 0
-  diffVector <- c (0, diffVector)
-  
-  sampledWeights <- rdirichlet(samples,weights)
-  
-  winLeft <- vector(length = samples)
-  winRope <- vector(length = samples)
-  winRight <- vector(length = samples)
-  
+  # Give half weight to pseudo observation to reflect prior
+  weights <- c(0.5, rep(1,length(diffVector)))
+
+  # Add difference of 0 to favour rope hypothesis via prior
+  diff_vec <- c (0, diffVector)
+
+  # Pre-compute matrix of summed difference
+  sum_mat <- outer(diffVector, diffVector, "+")
+
+  # Identify indices where sum of differences support region
+  max_rope <- 2 * rope_max
+  min_rope <- 2 * rope_min
+  right_idx <- which(sum_mat > max_rope, arr.ind = TRUE)
+  rope_idx <- which((sum_mat >= min_rope) & (sum_mat <= max_rope), arr.ind = TRUE)
+  left_idx <- which(sum_mat < min_rope, arr.ind = TRUE)
+
+  # Draw samples
+  sampled_weights <- MCMCpack::rdirichlet(samples, weights)
+
+  # Preallocate posterior probability
+  win_left <- vector(length = samples, mode = "double")
+  win_rope <- vector(length = samples, mode = "double")
+  win_right <- vector(length = samples, mode = "double")
+
   for (rep in 1:samples){
-    currentWeights <- sampledWeights[rep,]
-    for (i in 1:length(currentWeights)){
-      for (j in 1:length(currentWeights)){
-        product= currentWeights[i] * currentWeights[j]
-        if (diffVector[i]+diffVector[j] > (2*rope_max) ) {
-          winRight[rep] <- winRight[rep] + product
-        }
-        else if (diffVector[i]+diffVector[j] > (2*rope_min) ) {
-          winRope[rep] <- winRope[rep] + product
-        }
-        else {
-          winLeft[rep] <- winLeft[rep] + product
-        }
-      }
-    }
-    maxWins=max(winRight[rep],winRope[rep],winLeft[rep])
-    winners = (winRight[rep]==maxWins)*1 + (winRope[rep]==maxWins)*1 + (winLeft[rep]==maxWins)*1
-    winRight[rep] <- (winRight[rep]==maxWins)*1/winners
-    winRope[rep] <- (winRope[rep]==maxWins)*1/winners
-    winLeft[rep] <- (winLeft[rep]==maxWins)*1/winners
+    weights_rep <- sampled_weights[rep,]
+    prod_mat <- outer(weights_rep, weights_rep, "*")
+    win_right[rep] <- win_right[rep] + sum(prod_mat[right_idx])
+    win_rope[rep] <- win_rope[rep] + sum(prod_mat[rope_idx])
+    win_left[rep] <- win_left[rep] + sum(prod_mat[left_idx])
+    max_wins <- max(win_right[rep], win_rope[rep], win_left[rep])
+    is_right <- (win_right[rep] == max_wins) * 1
+    is_rope <- (win_rope[rep] == max_wins) * 1
+    is_left <- (win_left[rep] == max_wins) * 1
+    n_winners <- is_right + is_rope + is_left
+    win_right[rep] <- is_right / n_winners
+    win_rope[rep] <- is_rope / n_winners
+    win_left[rep] <- is_left / n_winners
   }
   
-  
-  results = list ("winLeft"=mean(winLeft), "winRope"=mean(winRope),
-                  "winRight"=mean(winRight) )
-  
+  results <- list(
+    "winLeft" = mean(win_left),
+    "winRope" = mean(win_rope),
+    "winRight" = mean(win_right)
+  )
   return (results)
-  
 }
