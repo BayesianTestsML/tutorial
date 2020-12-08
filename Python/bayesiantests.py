@@ -150,6 +150,8 @@ def signrank_MC(x, rope, prior_strength=0.6, prior_place=ROPE, nsamples=50000):
     """
     if x.ndim == 2:
         zm = x[:, 1] - x[:, 0]
+    else:
+        zm = x
     nm=len(zm)
     if prior_place==ROPE:
         z0=[0]
